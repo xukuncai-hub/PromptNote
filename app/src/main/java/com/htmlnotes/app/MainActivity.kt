@@ -2,6 +2,8 @@ package com.htmlnotes.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.inputmethod.InputMethodManager
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
@@ -54,6 +56,22 @@ class MainActivity : AppCompatActivity() {
 
         binding.toolbar.inflateMenu(R.menu.menu_main)
         updateToggleIcon()
+
+        // 返回键：搜索框聚焦时先退出搜索态（清空搜索词、收起键盘），再次按返回退出应用
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (binding.searchEdit.hasFocus()) {
+                    binding.searchEdit.text?.clear()
+                    binding.searchEdit.clearFocus()
+                    binding.root.requestFocus()
+                    val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                    imm.hideSoftInputFromWindow(binding.searchEdit.windowToken, 0)
+                } else {
+                    finish()
+                }
+            }
+        })
+
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_import -> {
