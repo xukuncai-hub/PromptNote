@@ -18,12 +18,14 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeHelper.apply(this)
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         prefs = getSharedPreferences("prefs", MODE_PRIVATE)
 
         binding.btnBack.setOnClickListener { finish() }
         binding.rowTheme.setOnClickListener { showThemeChooser() }
+        binding.rowThemeColor.setOnClickListener { showThemeColorChooser() }
         binding.rowDefaultView.setOnClickListener { showViewChooser() }
         binding.rowClear.setOnClickListener { confirmClear() }
         binding.rowEmail.setOnClickListener { contactAuthor() }
@@ -44,8 +46,26 @@ class SettingsActivity : AppCompatActivity() {
             App.THEME_DARK -> getString(R.string.theme_dark)
             else -> getString(R.string.theme_system)
         }
+        val colorIdx = ThemeHelper.currentIndex(this)
+        binding.themeColorValue.text = getString(ThemeHelper.colorNames[colorIdx])
+        binding.themeColorDot.backgroundTintList =
+            android.content.res.ColorStateList.valueOf(ThemeHelper.previewColors[colorIdx])
         binding.viewValue.text =
             getString(if (prefs.getBoolean("grid", true)) R.string.view_grid else R.string.view_list)
+    }
+
+    /** 主题色选择：选中后保存并立即重建生效。 */
+    private fun showThemeColorChooser() {
+        val names = ThemeHelper.colorNames.map { getString(it) }.toTypedArray()
+        val current = ThemeHelper.currentIndex(this)
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.settings_theme_color)
+            .setSingleChoiceItems(names, current) { dialog, which ->
+                prefs.edit().putInt("theme_color", which).apply()
+                dialog.dismiss()
+                recreate()
+            }
+            .show()
     }
 
     private fun showThemeChooser() {

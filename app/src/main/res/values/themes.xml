@@ -21,4 +21,61 @@
     <style name="TextAppearance.HtmlNotes.ToolbarTitle" parent="TextAppearance.Material3.TitleLarge">
         <item name="android:textStyle">bold</item>
     </style>
+
+    <!-- 主题色覆盖层（运行时按需 applyStyle） -->
+    <style name="ThemePromptNoteIndigo">
+        <item name="colorPrimary">@color/theme_indigo_primary</item>
+        <item name="colorOnPrimary">@color/theme_indigo_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_indigo_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_indigo_on_primary_container</item>
+    </style>
+
+    <style name="ThemePromptNoteTeal">
+        <item name="colorPrimary">@color/theme_teal_primary</item>
+        <item name="colorOnPrimary">@color/theme_teal_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_teal_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_teal_on_primary_container</item>
+    </style>
+
+    <style name="ThemePromptNoteCoral">
+        <item name="colorPrimary">@color/theme_coral_primary</item>
+        <item name="colorOnPrimary">@color/theme_coral_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_coral_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_coral_on_primary_container</item>
+    </style>
+
+    <style name="ThemePromptNoteOrange">
+        <item name="colorPrimary">@color/theme_orange_primary</item>
+        <item name="colorOnPrimary">@color/theme_orange_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_orange_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_orange_on_primary_container</item>
+    </style>
+
+    <style name="ThemePromptNoteRose">
+        <item name="colorPrimary">@color/theme_rose_primary</item>
+        <item name="colorOnPrimary">@color/theme_rose_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_rose_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_rose_on_primary_container</item>
+    </style>
+
+    <style name="ThemePromptNoteViolet">
+        <item name="colorPrimary">@color/theme_violet_primary</item>
+        <item name="colorOnPrimary">@color/theme_violet_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_violet_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_violet_on_primary_container</item>
+    </style>
+
+    <style name="ThemePromptNoteSky">
+        <item name="colorPrimary">@color/theme_sky_primary</item>
+        <item name="colorOnPrimary">@color/theme_sky_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_sky_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_sky_on_primary_container</item>
+    </style>
+
+    <style name="ThemePromptNoteForest">
+        <item name="colorPrimary">@color/theme_forest_primary</item>
+        <item name="colorOnPrimary">@color/theme_forest_on_primary</item>
+        <item name="colorPrimaryContainer">@color/theme_forest_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/theme_forest_on_primary_container</item>
+    </style>
 </resources>

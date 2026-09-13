@@ -18,6 +18,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: ProjectAdapter
     private var allItems: List<Project> = emptyList()
     private var isGrid: Boolean = true
+    private var lastThemeColor = ThemeHelper.DEFAULT
 
     private val importLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -34,6 +35,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeHelper.apply(this)
+        lastThemeColor = ThemeHelper.currentIndex(this)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -93,6 +96,13 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        // 设置页修改主题色后返回，重建以应用新色
+        val themeColor = ThemeHelper.currentIndex(this)
+        if (themeColor != lastThemeColor) {
+            lastThemeColor = themeColor
+            recreate()
+            return
+        }
         // 同步设置中的默认视图
         val grid = getSharedPreferences("prefs", MODE_PRIVATE).getBoolean("grid", true)
         if (grid != isGrid) {

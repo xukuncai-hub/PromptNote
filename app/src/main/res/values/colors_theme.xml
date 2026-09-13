@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 主题色板（浅色）：8 套 Material 3 主色 -->
+    <color name="theme_indigo_primary">#4F5BDB</color>
+    <color name="theme_indigo_on_primary">#FFFFFF</color>
+    <color name="theme_indigo_primary_container">#E0E1FF</color>
+    <color name="theme_indigo_on_primary_container">#10124E</color>
+
+    <color name="theme_teal_primary">#00796B</color>
+    <color name="theme_teal_on_primary">#FFFFFF</color>
+    <color name="theme_teal_primary_container">#A7F2E8</color>
+    <color name="theme_teal_on_primary_container">#00201B</color>
+
+    <color name="theme_coral_primary">#B4341F</color>
+    <color name="theme_coral_on_primary">#FFFFFF</color>
+    <color name="theme_coral_primary_container">#FFDAD2</color>
+    <color name="theme_coral_on_primary_container">#3A0800</color>
+
+    <color name="theme_orange_primary">#8F4B00</color>
+    <color name="theme_orange_on_primary">#FFFFFF</color>
+    <color name="theme_orange_primary_container">#FFDCBE</color>
+    <color name="theme_orange_on_primary_container">#2E1500</color>
+
+    <color name="theme_rose_primary">#B2396D</color>
+    <color name="theme_rose_on_primary">#FFFFFF</color>
+    <color name="theme_rose_primary_container">#FFD9E2</color>
+    <color name="theme_rose_on_primary_container">#3E001E</color>
+
+    <color name="theme_violet_primary">#6E4BCC</color>
+    <color name="theme_violet_on_primary">#FFFFFF</color>
+    <color name="theme_violet_primary_container">#E8DEFF</color>
+    <color name="theme_violet_on_primary_container">#230064</color>
+
+    <color name="theme_sky_primary">#0061A4</color>
+    <color name="theme_sky_on_primary">#FFFFFF</color>
+    <color name="theme_sky_primary_container">#CFE5FF</color>
+    <color name="theme_sky_on_primary_container">#001D35</color>
+
+    <color name="theme_forest_primary">#2E6932</color>
+    <color name="theme_forest_on_primary">#FFFFFF</color>
+    <color name="theme_forest_primary_container">#A5F6A7</color>
+    <color name="theme_forest_on_primary_container">#002105</color>
+</resources>

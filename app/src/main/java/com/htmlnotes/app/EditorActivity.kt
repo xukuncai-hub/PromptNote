@@ -45,6 +45,7 @@ class EditorActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeHelper.apply(this)
         binding = ActivityEditorBinding.inflate(layoutInflater)
         setContentView(binding.root)
         store = ProjectStore(this)

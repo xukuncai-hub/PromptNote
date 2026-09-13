@@ -20,6 +20,7 @@ class PreviewActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        ThemeHelper.apply(this)
         binding = ActivityPreviewBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

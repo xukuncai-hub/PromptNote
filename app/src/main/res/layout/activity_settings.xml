@@ -112,6 +112,55 @@
                         android:layout_marginHorizontal="16dp"
                         android:background="?attr/colorOutlineVariant" />
 
+                    <!-- 主题色 -->
+                    <LinearLayout
+                        android:id="@+id/rowThemeColor"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="16dp">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:src="@drawable/ic_palette"
+                            app:tint="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:text="@string/settings_theme_color"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="15sp" />
+
+                        <View
+                            android:id="@+id/themeColorDot"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_dot"
+                            android:backgroundTint="@color/theme_indigo_primary" />
+
+                        <TextView
+                            android:id="@+id/themeColorValue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="0.5dp"
+                        android:layout_marginHorizontal="16dp"
+                        android:background="?attr/colorOutlineVariant" />
+
                     <!-- 默认视图 -->
                     <LinearLayout
                         android:id="@+id/rowDefaultView"
