@@ -26,6 +26,8 @@ class SettingsActivity : AppCompatActivity() {
         binding.rowTheme.setOnClickListener { showThemeChooser() }
         binding.rowDefaultView.setOnClickListener { showViewChooser() }
         binding.rowClear.setOnClickListener { confirmClear() }
+        binding.rowEmail.setOnClickListener { contactAuthor() }
+        binding.rowGithub.setOnClickListener { openGithub() }
 
         try {
             val info = packageManager.getPackageInfo(packageName, 0)
@@ -87,5 +89,28 @@ class SettingsActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /** 打开邮件客户端联系作者。 */
+    private fun contactAuthor() {
+        val intent = android.content.Intent(
+            android.content.Intent.ACTION_SENDTO,
+            android.net.Uri.parse("mailto:" + getString(R.string.author_email))
+        )
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, R.string.author_email, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /** 浏览器打开作者 GitHub 主页。 */
+    private fun openGithub() {
+        startActivity(
+            android.content.Intent(
+                android.content.Intent.ACTION_VIEW,
+                android.net.Uri.parse("https://" + getString(R.string.author_github))
+            )
+        )
     }
 }
