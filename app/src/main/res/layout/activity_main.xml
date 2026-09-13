@@ -132,7 +132,6 @@
         android:contentDescription="@string/new_note"
         app:backgroundTint="?attr/colorPrimary"
         app:icon="@drawable/ic_add"
-        app:iconTint="?attr/colorOnPrimary"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
