@@ -90,6 +90,9 @@ class EditorActivity : AppCompatActivity() {
         binding.btnCheck.setOnClickListener { insertText("☑ ") }
         binding.btnFormat.setOnClickListener { showFormatSheet() }
         binding.btnAdd.setOnClickListener { toast(R.string.insert_placeholder) }
+
+        // 收起键盘后保留光标（标题 / 代码框 / 富文本）
+        CursorKeeper.attach(this, binding.edTitle, binding.edContent, binding.richWeb)
     }
 
     // ---------------- 富文本编辑器（文字便签） ----------------

@@ -61,9 +61,11 @@ class MainActivity : AppCompatActivity() {
         updateToggleIcon()
 
         // 返回键：搜索框聚焦时先退出搜索态（清空搜索词、收起键盘），再次按返回退出应用
+        val forgetSearch = CursorKeeper.attach(this, binding.searchEdit)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (binding.searchEdit.hasFocus()) {
+                    forgetSearch()
                     binding.searchEdit.text?.clear()
                     binding.searchEdit.clearFocus()
                     binding.root.requestFocus()
