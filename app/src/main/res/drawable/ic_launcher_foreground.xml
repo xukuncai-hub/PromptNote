@@ -3,14 +3,29 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- </> 代码符号 -->
+    <!-- 便签纸主体（圆角矩形，中心 26~82） -->
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#FFFFFF"
+        android:pathData="M36,26 L72,26 Q82,26 82,36 L82,72 Q82,82 72,82 L36,82 Q26,82 26,72 L26,36 Q26,26 36,26 Z" />
+    <!-- 右上角折起（纸角翻起露出的浅色暗面） -->
+    <path
+        android:fillColor="#DDE1FF"
+        android:pathData="M58,26 L82,26 L82,50 Z" />
+    <!-- 折痕线 -->
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M58,26 L82,50"
+        android:strokeColor="#B9C0F5"
+        android:strokeLineCap="round"
+        android:strokeWidth="1.8" />
+    <!-- </> 代码符号（主色，呼应 HTML 便签） -->
+    <path
+        android:fillColor="#4F5BDB"
         android:pathData="M47,44 L33,54 L47,64 L51,60 L39,54 L51,48 Z" />
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#4F5BDB"
         android:pathData="M61,44 L75,54 L61,64 L57,60 L69,54 L57,48 Z" />
     <path
-        android:fillColor="#FFFFFFFF"
+        android:fillColor="#4F5BDB"
         android:pathData="M57,40 L52,68 L57,68 L62,40 Z" />
 </vector>
