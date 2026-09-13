@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 分段控件文字色：选中深色加粗 / 常态灰 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true" android:color="#1B1B20" />
+    <item android:color="#9E9E9E" />
+</selector>

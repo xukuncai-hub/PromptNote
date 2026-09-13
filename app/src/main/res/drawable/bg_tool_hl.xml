@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 文字高亮 A 按钮：常态黄色，选中描边加深 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#FFE082" />
+            <stroke
+                android:width="1.5dp"
+                android:color="#F9A825" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FFF176" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</selector>

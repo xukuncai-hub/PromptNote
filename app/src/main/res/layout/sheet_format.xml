@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_sheet_top"
+    android:orientation="vertical"
+    android:paddingBottom="20dp">
+
+    <!-- ============ 顶部标题栏 ============ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/format"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="@drawable/bg_circle_gray"
+            android:contentDescription="@string/sheet_close"
+            android:padding="9dp"
+            android:src="@drawable/ic_close"
+            app:tint="?attr/colorOnSurfaceVariant" />
+    </LinearLayout>
+
+    <!-- ============ 一级分类标签栏（分段控件） ============ -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/segTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_segment_item"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:text="@string/seg_title"
+                android:textColor="@color/txt_segment"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/segSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_segment_item"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:text="@string/seg_subtitle"
+                android:textColor="@color/txt_segment"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/segHeading"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_segment_item"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:text="@string/seg_heading"
+                android:textColor="@color/txt_segment"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/segBody"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:layout_marginEnd="8dp"
+                android:background="@drawable/bg_segment_item"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:text="@string/seg_body"
+                android:textColor="@color/txt_segment"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/segCaption"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_segment_item"
+                android:gravity="center"
+                android:paddingHorizontal="14dp"
+                android:text="@string/seg_caption"
+                android:textColor="@color/txt_segment"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- ============ 二级：文本样式工具栏（第一行） ============ -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/btnBold"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/style_bold"
+                android:enabled="false"
+                android:gravity="center"
+                android:text="B"
+                android:textColor="#BDBDBD"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnItalic"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/style_italic"
+                android:gravity="center"
+                android:text="I"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="16sp"
+                android:textStyle="italic" />
+
+            <TextView
+                android:id="@+id/btnStrike"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/style_strike"
+                android:gravity="center"
+                android:text="S"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/btnHl"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_hl"
+                android:contentDescription="@string/style_highlight"
+                android:gravity="center"
+                android:text="A"
+                android:textColor="#5D4037"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnFg"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/style_color"
+                android:gravity="center"
+                android:text="A"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/btnWavy"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/style_wavy"
+                android:gravity="center"
+                android:text="A"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- ============ 三级：段落排版工具栏（第二行） ============ -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="12dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/btnUl"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/para_ul"
+                android:padding="10dp"
+                android:src="@drawable/ic_list_ul"
+                app:tint="@color/tool_tint" />
+
+            <ImageButton
+                android:id="@+id/btnOl"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/para_ol"
+                android:padding="10dp"
+                android:src="@drawable/ic_list_ol"
+                app:tint="@color/tool_tint" />
+
+            <ImageButton
+                android:id="@+id/btnOutdent"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/para_outdent"
+                android:padding="10dp"
+                android:src="@drawable/ic_outdent"
+                app:tint="@color/tool_tint" />
+
+            <ImageButton
+                android:id="@+id/btnIndent"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/para_indent"
+                android:padding="10dp"
+                android:src="@drawable/ic_indent"
+                app:tint="@color/tool_tint" />
+
+            <ImageButton
+                android:id="@+id/btnAlignLeft"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/para_align_left"
+                android:padding="10dp"
+                android:src="@drawable/ic_align_left"
+                app:tint="@color/tool_tint" />
+
+            <ImageButton
+                android:id="@+id/btnAlignRight"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:background="@drawable/bg_tool_box"
+                android:contentDescription="@string/para_align_right"
+                android:padding="10dp"
+                android:src="@drawable/ic_align_right"
+                app:tint="@color/tool_tint" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- ============ 底部：字体控制栏（第三行） ============ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="16dp">
+
+        <ImageButton
+            android:id="@+id/btnHr"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_tool_box"
+            android:contentDescription="@string/insert_hr"
+            android:padding="10dp"
+            android:src="@drawable/ic_hr"
+            app:tint="@color/tool_tint" />
+
+        <TextView
+            android:id="@+id/btnFont"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_marginHorizontal="10dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_tool_box"
+            android:contentDescription="@string/font_system"
+            android:gravity="center"
+            android:text="@string/font_system"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp" />
+
+        <TextView
+            android:id="@+id/btnSize"
+            android:layout_width="64dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="10dp"
+            android:background="@drawable/bg_tool_box"
+            android:contentDescription="@string/font_size"
+            android:gravity="center"
+            android:text="24"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnRainbow"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@drawable/bg_rainbow"
+            android:contentDescription="@string/font_color"
+            android:foreground="?attr/selectableItemBackground" />
+    </LinearLayout>
+
+</LinearLayout>

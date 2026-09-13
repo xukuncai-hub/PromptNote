@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 浅色色板（现代简洁风） -->
+    <color name="md_primary">#4F5BDB</color>
+    <color name="md_on_primary">#FFFFFF</color>
+    <color name="md_primary_container">#E0E1FF</color>
+    <color name="md_on_primary_container">#10124E</color>
+    <color name="md_secondary">#5C5E70</color>
+    <color name="md_on_secondary">#FFFFFF</color>
+    <color name="md_surface">#FAFAFC</color>
+    <color name="md_on_surface">#1B1B20</color>
+    <color name="md_surface_variant">#F0F0F5</color>
+    <color name="md_on_surface_variant">#494A55</color>
+    <color name="md_outline">#E0E0E8</color>
+    <color name="md_error">#BA1A1A</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="ic_launcher_background">#4F5BDB</color>
+</resources>

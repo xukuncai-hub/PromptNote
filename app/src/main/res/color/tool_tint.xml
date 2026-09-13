@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 工具图标着色：激活主题色 / 常态深灰 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_selected="true" android:color="@color/md_primary" />
+    <item android:color="#1B1B20" />
+</selector>

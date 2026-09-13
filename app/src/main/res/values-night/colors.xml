@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material 3 深色色板 -->
+    <color name="md_primary">#B9C0FF</color>
+    <color name="md_on_primary">#212473</color>
+    <color name="md_primary_container">#393E93</color>
+    <color name="md_on_primary_container">#E0E1FF</color>
+    <color name="md_secondary">#C0C3DB</color>
+    <color name="md_on_secondary">#2A2D3D</color>
+    <color name="md_surface">#14141A</color>
+    <color name="md_on_surface">#E4E2E9</color>
+    <color name="md_surface_variant">#232329</color>
+    <color name="md_on_surface_variant">#C6C6D0</color>
+    <color name="md_outline">#3A3A44</color>
+    <color name="md_error">#FFB4AB</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="ic_launcher_background">#4F5BDB</color>
+</resources>

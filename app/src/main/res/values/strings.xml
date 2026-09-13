@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PromptNote</string>
+
+    <!-- 主界面 -->
+    <string name="new_note">新建便签</string>
+    <string name="import_html">导入 HTML</string>
+    <string name="choose_type_title">新建便签</string>
+    <string name="text_note">文本便签</string>
+    <string name="html_note">HTML 便签</string>
+    <string name="empty_title">还没有便签</string>
+    <string name="empty_body">写一条普通便签\n或粘贴一段 HTML 代码</string>
+    <string name="search_hint">搜索便签</string>
+    <string name="no_result">没有找到相关便签</string>
+    <string name="pin">置顶</string>
+    <string name="unpin">取消置顶</string>
+    <string name="toggle_layout">切换视图</string>
+    <string name="note_type">类型</string>
+    <string name="delete_title">删除便签</string>
+    <string name="delete_message">确定要删除「%1$s」吗？</string>
+    <string name="delete">删除</string>
+    <string name="cancel">取消</string>
+
+    <!-- 编辑器 -->
+    <string name="editor_title">新建便签</string>
+    <string name="editor_edit_title">编辑便签</string>
+    <string name="hint_title">标题</string>
+    <string name="hint_code">在这里粘贴 HTML 代码…</string>
+    <string name="label_code">HTML 代码</string>
+    <string name="label_content">内容</string>
+    <string name="done">完成</string>
+    <string name="more_menu">更多</string>
+    <string name="unnamed_text">未命名便签</string>
+    <string name="unnamed_html">未命名笔记</string>
+    <string name="meta_format">%1$s | %2$d字 | %3$s</string>
+    <string name="notebook_default">默认笔记本</string>
+    <string name="btn_preview">预览</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_save_changes">保存修改</string>
+
+    <!-- 悬浮编辑工具栏 -->
+    <string name="todo_menu">待办</string>
+    <string name="check_list">清单</string>
+    <string name="format">格式</string>
+    <string name="insert_attach">插入附件</string>
+    <string name="insert_placeholder">插入附件功能待接入</string>
+
+    <!-- 格式设置底部弹窗 -->
+    <string name="sheet_close">关闭</string>
+    <string name="seg_title">标题</string>
+    <string name="seg_subtitle">副标题</string>
+    <string name="seg_heading">小标题</string>
+    <string name="seg_body">正文</string>
+    <string name="seg_caption">注释</string>
+    <string name="style_bold">粗体</string>
+    <string name="style_italic">斜体</string>
+    <string name="style_strike">删除线</string>
+    <string name="style_highlight">文字高亮</string>
+    <string name="style_color">字体颜色</string>
+    <string name="style_wavy">波浪线</string>
+    <string name="para_ul">无序列表</string>
+    <string name="para_ol">有序列表</string>
+    <string name="para_outdent">减少缩进</string>
+    <string name="para_indent">增加缩进</string>
+    <string name="para_align_left">左对齐</string>
+    <string name="para_align_right">右对齐</string>
+    <string name="insert_hr">分割线</string>
+    <string name="font_system">系统字体</string>
+    <string name="font_system_on">系统字体 ✓</string>
+    <string name="font_size">字号</string>
+    <string name="font_color">字体颜色</string>
+
+    <!-- 富文本排版工具栏 -->
+    <string name="rich_bold">加粗</string>
+    <string name="rich_italic">斜体</string>
+    <string name="rich_underline">下划线</string>
+    <string name="rich_h1">标题 1</string>
+    <string name="rich_h2">标题 2</string>
+    <string name="rich_h3">标题 3</string>
+    <string name="rich_ul">无序列表</string>
+    <string name="rich_ol">有序列表</string>
+    <string name="rich_quote">引用</string>
+    <string name="rich_align_left">左对齐</string>
+    <string name="rich_align_center">居中对齐</string>
+    <string name="rich_align_right">右对齐</string>
+    <string name="rich_color">文字颜色</string>
+    <string name="rich_rule">分割线</string>
+    <string name="rich_undo">撤销</string>
+    <string name="rich_redo">重做</string>
+    <string name="rich_clear">清除格式</string>
+
+    <!-- 预览 -->
+    <string name="refresh">刷新</string>
+    <string name="copy_code">复制内容</string>
+    <string name="share">分享</string>
+    <string name="copied">内容已复制</string>
+
+    <!-- 设置 -->
+    <string name="settings">设置</string>
+    <string name="settings_appearance">外观</string>
+    <string name="settings_theme">主题</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
+    <string name="settings_default_view">默认视图</string>
+    <string name="view_grid">双列网格</string>
+    <string name="view_list">单列列表</string>
+    <string name="settings_data">数据</string>
+    <string name="settings_clear">清空全部便签</string>
+    <string name="settings_clear_summary">删除所有便签，无法恢复</string>
+    <string name="settings_clear_confirm">将删除所有便签，且无法恢复。确定继续吗？</string>
+    <string name="settings_cleared">已清空全部便签</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_version">版本</string>
+
+    <!-- 其他 -->
+    <string name="action_back">返回</string>
+    <string name="empty_page">（空白页面）</string>
+    <string name="imported_note">导入的笔记</string>
+</resources>
