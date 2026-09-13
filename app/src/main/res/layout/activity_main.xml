@@ -124,13 +124,13 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabNew"
-        style="@style/Widget.Material3.ExtendedFloatingActionButton.Icon.Primary"
+        style="@style/Widget.Material3.FloatingActionButton.Primary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
-        android:text="@string/new_note"
+        android:contentDescription="@string/new_note"
         app:icon="@drawable/ic_add"
         app:iconTint="@color/md_on_primary"
         app:layout_constraintBottom_toBottomOf="parent"
