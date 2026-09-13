@@ -2,6 +2,10 @@
 
 一款安卓便签应用：既能像普通便签一样记录文字，也能直接保存并预览 AI 生成的 HTML 代码。
 
+## 下载
+
+从 [Releases](https://github.com/xukuncai-hub/PromptNote/releases) 下载最新 APK（Android 8.0+）。
+
 ## 功能
 
 **便签管理**
