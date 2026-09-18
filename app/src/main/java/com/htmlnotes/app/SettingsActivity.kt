@@ -3,6 +3,8 @@ package com.htmlnotes.app
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -19,11 +21,21 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         ThemeHelper.apply(this)
+        enableEdgeToEdge()
         binding = ActivitySettingsBinding.inflate(layoutInflater)
         setContentView(binding.root)
         prefs = getSharedPreferences("prefs", MODE_PRIVATE)
 
-        binding.btnBack.setOnClickListener { finish() }
+        // Edge-to-edge：顶栏避让状态栏，滚动内容避让导航栏（可滚动进 bars 下方）
+        binding.topBar.applySystemBarInsets(top = true)
+        binding.scroll.applySystemBarInsets(left = true, right = true, bottom = true)
+
+        binding.btnBack.setOnClickListener { finishWithAnim() }
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                finishWithAnim()
+            }
+        })
         binding.rowTheme.setOnClickListener { showThemeChooser() }
         binding.rowThemeColor.setOnClickListener { showThemeColorChooser() }
         binding.rowDefaultView.setOnClickListener { showViewChooser() }
@@ -40,6 +52,11 @@ class SettingsActivity : AppCompatActivity() {
         refreshValues()
     }
 
+    private fun finishWithAnim() {
+        finish()
+        overridePendingTransition(R.anim.fade_in, R.anim.slide_out_right)
+    }
+
     private fun refreshValues() {
         binding.themeValue.text = when (prefs.getInt("theme", App.THEME_SYSTEM)) {
             App.THEME_LIGHT -> getString(R.string.theme_light)
@@ -48,8 +65,11 @@ class SettingsActivity : AppCompatActivity() {
         }
         val colorIdx = ThemeHelper.currentIndex(this)
         binding.themeColorValue.text = getString(ThemeHelper.colorNames[colorIdx])
-        binding.themeColorDot.backgroundTintList =
-            android.content.res.ColorStateList.valueOf(ThemeHelper.previewColors[colorIdx])
+        binding.themeColorDot.backgroundTintList = android.content.res.ColorStateList.valueOf(
+            com.google.android.material.color.MaterialColors.getColor(
+                binding.themeColorDot, com.google.android.material.R.attr.colorPrimary
+            )
+        )
         binding.viewValue.text =
             getString(if (prefs.getBoolean("grid", true)) R.string.view_grid else R.string.view_list)
     }

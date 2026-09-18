@@ -21,10 +21,16 @@
             </intent-filter>
         </activity>
 
+        <!--
+          configChanges 让旋转/尺寸变化不重建 Activity：编辑器正文在 WebView 里，
+          重建会导致未保存的富文本内容丢失（Activity 重建后只能从磁盘读回旧内容）。
+          注意不要加 uiMode，否则切换深浅色时不会重建、主题无法生效。
+        -->
         <activity
             android:name=".EditorActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:windowSoftInputMode="adjustNothing" />
 
         <activity
             android:name=".PreviewActivity"

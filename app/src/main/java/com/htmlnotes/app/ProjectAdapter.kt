@@ -3,6 +3,8 @@ package com.htmlnotes.app
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.htmlnotes.app.databinding.ItemProjectBinding
 import java.text.SimpleDateFormat
@@ -10,14 +12,17 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * 便签网格适配器：OPPO 式彩色卡片，点击打开预览，长按弹出置顶/删除菜单。
+ * 便签网格适配器：低饱和柔和色卡片，点击打开预览，长按弹出置顶/删除菜单。
  */
 class ProjectAdapter(
     private var items: List<Project>,
-    private val onAction: (Project, Action) -> Unit
+    private val onAction: (Project, Action, View) -> Unit
 ) : RecyclerView.Adapter<ProjectAdapter.VH>() {
 
     enum class Action { OPEN, EDIT, DELETE, PIN }
+
+    /** 复用同一个格式化器：原先每次 onBindViewHolder 都 new 一个 SimpleDateFormat，开销不小 */
+    private val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
     inner class VH(val binding: ItemProjectBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -29,45 +34,84 @@ class ProjectAdapter(
     override fun onBindViewHolder(holder: VH, position: Int) {
         val p = items[position]
         val b = holder.binding
-        b.root.setCardBackgroundColor(noteColors[p.colorIndex % noteColors.size])
-        b.pinIcon.visibility = if (p.pinned) View.VISIBLE else View.GONE
-        b.typeIcon.setImageResource(
-            if (p.type == Project.TYPE_TEXT) R.drawable.ic_text else R.drawable.ic_code
+        val context = b.root.context
+        // 卡片底色：同一批颜色 id，浅色/深色值分别在 values/colors.xml 与
+        // values-night/colors.xml 中定义，按当前系统配置自动解析，不用手写 isNight 判断
+        b.root.setCardBackgroundColor(
+            ContextCompat.getColor(context, colorIds[p.colorIndex % colorIds.size])
         )
-        b.title.text = p.title
-        b.snippet.text = snippetOf(p.content)
-        b.date.text = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(Date(p.updatedAt))
-        b.root.setOnClickListener { onAction(p, Action.OPEN) }
-        b.btnEdit.setOnClickListener { onAction(p, Action.EDIT) }
+        b.pinIcon.visibility = if (p.pinned) View.VISIBLE else View.GONE
+        val snippet = snippetOf(p.content)
+        // 标题：用户自定义过（非默认占位）时用用户标题；否则从 HTML 提取 <title>/<h1>/<h2>，
+        // 提取不到再显示「无标题笔记」——`<!DOCTYPE` 这类源码永远不会出现在界面上
+        b.title.text = displayTitle(p, context)
+        b.snippet.text = snippet
+        b.date.text = dateFormat.format(Date(p.updatedAt))
+
+        // 把标题 / 类型 / 置顶 / 摘要合并成一条描述，避免 TalkBack 逐个念读零散子视图
+        b.root.contentDescription = buildString {
+            append(b.title.text)
+            append('，').append(
+                context.getString(if (p.type == Project.TYPE_TEXT) R.string.text_note else R.string.html_note)
+            )
+            if (p.pinned) append('，').append(context.getString(R.string.a11y_pinned))
+            if (snippet.isNotBlank() && snippet != BLANK_SNIPPET) append('，').append(snippet)
+        }
+        // 每张卡片的编辑按钮都叫「编辑便签」的话无法区分，带上标题
+        b.btnEdit.contentDescription = context.getString(R.string.edit_note_named, b.title.text)
+
+        // 过渡动画源视图统一用整张卡片：编辑按钮太小，从它展开视觉上不连贯
+        b.root.setOnClickListener { onAction(p, Action.OPEN, b.root) }
+        b.btnEdit.setOnClickListener { onAction(p, Action.EDIT, b.root) }
         b.root.setOnLongClickListener {
-            onAction(p, Action.PIN)
+            onAction(p, Action.PIN, b.root)
             true
         }
     }
 
+    /**
+     * 卡片标题策略：
+     * 1. 用户手动命名（标题不等于「未命名笔记/未命名便签」默认占位）→ 用用户标题；
+     * 2. 默认占位 → HtmlText.extractTitle() 提取 <title>/<h1>/<h2> 或纯文本前缀；
+     * 3. 内容也没有可读文本 → 「无标题笔记」。
+     */
+    private fun displayTitle(p: Project, context: android.content.Context): String {
+        val defaultTitle = context.getString(
+            if (p.type == Project.TYPE_TEXT) R.string.unnamed_text else R.string.unnamed_html
+        )
+        if (p.title != defaultTitle) return p.title
+        return extractTitle(p.content) ?: context.getString(R.string.untitled_note)
+    }
+
+    /**
+     * 用 DiffUtil 增量更新：搜索时每敲一个字都会重新过滤列表，
+     * 全量 notifyDataSetChanged 会让所有卡片重新绑定并重放错落入场动画，出现明显闪烁。
+     */
     fun submit(newItems: List<Project>) {
+        val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = items.size
+            override fun getNewListSize() = newItems.size
+            override fun areItemsTheSame(oldPos: Int, newPos: Int) =
+                items[oldPos].id == newItems[newPos].id
+            override fun areContentsTheSame(oldPos: Int, newPos: Int) =
+                items[oldPos] == newItems[newPos]
+        })
         items = newItems
-        notifyDataSetChanged()
+        diff.dispatchUpdatesTo(this)
     }
 
     companion object {
-        /** OPPO 式柔和卡片底色，浅色系在明暗模式下均保持清晰。 */
-        val noteColors = intArrayOf(
-            0xFFF9F0DC.toInt(), // 米黄
-            0xFFE4F2E8.toInt(), // 浅绿
-            0xFFE2EEF9.toInt(), // 浅蓝
-            0xFFF9E3DE.toInt(), // 浅珊瑚
-            0xFFEFE7F6.toInt(), // 浅紫
-            0xFFE2F1F0.toInt()  // 浅青
+        /**
+         * 卡片底色 id（低饱和柔和色，6 色轮换）。浅色值在 values/colors.xml，
+         * 深色值在 values-night/colors.xml，ContextCompat.getColor 按当前配置自动取色。
+         */
+        val colorIds = intArrayOf(
+            R.color.card_bg_0,
+            R.color.card_bg_1,
+            R.color.card_bg_2,
+            R.color.card_bg_3,
+            R.color.card_bg_4,
+            R.color.card_bg_5
         )
     }
-}
-
-/** 从 HTML 或文本中提取摘要。 */
-private fun snippetOf(html: String): String {
-    val text = html
-        .replace(Regex("<[^>]*>"), " ")
-        .replace(Regex("\\s+"), " ")
-        .trim()
-    return text.ifBlank { "（空白）" }.take(80)
 }

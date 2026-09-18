@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 字体族循环顺序：系统默认 / 衬线 / 等宽 -->
+    <string-array name="font_family_names">
+        <item>系统字体</item>
+        <item>衬线字体</item>
+        <item>等宽字体</item>
+    </string-array>
+</resources>

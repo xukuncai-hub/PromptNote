@@ -3,14 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface"
-    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
     <!-- 顶栏 -->
     <LinearLayout
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
+        android:minHeight="?attr/actionBarSize"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="4dp">
@@ -36,8 +36,10 @@
     </LinearLayout>
 
     <ScrollView
+        android:id="@+id/scroll"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:clipToPadding="false">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -48,23 +50,12 @@
 
             <!-- ===== 外观 ===== -->
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                style="@style/Widget.HtmlNotes.Settings.SectionTitle"
                 android:layout_marginTop="12dp"
-                android:layout_marginBottom="6dp"
-                android:text="@string/settings_appearance"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:text="@string/settings_appearance" />
 
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp"
-                app:cardBackgroundColor="?attr/colorSurfaceVariant"
-                app:strokeWidth="0dp">
+                style="@style/Widget.HtmlNotes.Settings.Card">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -74,70 +65,35 @@
                     <!-- 主题 -->
                     <LinearLayout
                         android:id="@+id/rowTheme"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
+                        style="@style/Widget.HtmlNotes.Settings.Row">
 
                         <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_theme"
-                            app:tint="?attr/colorOnSurface" />
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_theme" />
 
                         <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:layout_weight="1"
-                            android:text="@string/settings_theme"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/settings_theme" />
 
                         <TextView
                             android:id="@+id/themeValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="14sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Value" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="0.5dp"
-                        android:layout_marginHorizontal="16dp"
-                        android:background="?attr/colorOutlineVariant" />
+                    <View style="@style/Widget.HtmlNotes.Settings.Divider" />
 
                     <!-- 主题色 -->
                     <LinearLayout
                         android:id="@+id/rowThemeColor"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
+                        style="@style/Widget.HtmlNotes.Settings.Row">
 
                         <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_palette"
-                            app:tint="?attr/colorOnSurface" />
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_palette" />
 
                         <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:layout_weight="1"
-                            android:text="@string/settings_theme_color"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/settings_theme_color" />
 
                         <View
                             android:id="@+id/themeColorDot"
@@ -145,93 +101,50 @@
                             android:layout_height="16dp"
                             android:layout_marginEnd="8dp"
                             android:background="@drawable/bg_dot"
-                            android:backgroundTint="@color/theme_indigo_primary" />
+                            android:backgroundTint="?attr/colorPrimary" />
 
                         <TextView
                             android:id="@+id/themeColorValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="14sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Value" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="0.5dp"
-                        android:layout_marginHorizontal="16dp"
-                        android:background="?attr/colorOutlineVariant" />
+                    <View style="@style/Widget.HtmlNotes.Settings.Divider" />
 
                     <!-- 默认视图 -->
                     <LinearLayout
                         android:id="@+id/rowDefaultView"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
+                        style="@style/Widget.HtmlNotes.Settings.Row">
 
                         <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_grid"
-                            app:tint="?attr/colorOnSurface" />
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_grid" />
 
                         <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:layout_weight="1"
-                            android:text="@string/settings_default_view"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/settings_default_view" />
 
                         <TextView
                             android:id="@+id/viewValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="14sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Value" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- ===== 数据 ===== -->
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                style="@style/Widget.HtmlNotes.Settings.SectionTitle"
                 android:layout_marginTop="20dp"
-                android:layout_marginBottom="6dp"
-                android:text="@string/settings_data"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:text="@string/settings_data" />
 
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp"
-                app:cardBackgroundColor="?attr/colorSurfaceVariant"
-                app:strokeWidth="0dp">
+                style="@style/Widget.HtmlNotes.Settings.Card">
 
                 <LinearLayout
                     android:id="@+id/rowClear"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:background="?attr/selectableItemBackground"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="16dp">
+                    style="@style/Widget.HtmlNotes.Settings.Row">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/Widget.HtmlNotes.Settings.Icon"
                         android:src="@drawable/ic_delete"
                         app:tint="?attr/colorError" />
 
@@ -262,23 +175,12 @@
 
             <!-- ===== 关于 ===== -->
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                style="@style/Widget.HtmlNotes.Settings.SectionTitle"
                 android:layout_marginTop="20dp"
-                android:layout_marginBottom="6dp"
-                android:text="@string/settings_about"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="13sp"
-                android:textStyle="bold" />
+                android:text="@string/settings_about" />
 
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp"
-                app:cardBackgroundColor="?attr/colorSurfaceVariant"
-                app:strokeWidth="0dp">
+                style="@style/Widget.HtmlNotes.Settings.Card">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -286,153 +188,77 @@
                     android:orientation="vertical">
 
                     <!-- 作者 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
+                    <LinearLayout style="@style/Widget.HtmlNotes.Settings.RowBase">
 
                         <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_person"
-                            app:tint="?attr/colorOnSurface" />
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_person" />
 
                         <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:layout_weight="1"
-                            android:text="@string/settings_author"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/settings_author" />
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/author_name"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="14sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Value"
+                            android:text="@string/author_name" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="0.5dp"
-                        android:layout_marginHorizontal="16dp"
-                        android:background="?attr/colorOutlineVariant" />
+                    <View style="@style/Widget.HtmlNotes.Settings.Divider" />
 
                     <!-- 邮箱（点击发邮件） -->
                     <LinearLayout
                         android:id="@+id/rowEmail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
+                        style="@style/Widget.HtmlNotes.Settings.Row">
 
                         <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_email"
-                            app:tint="?attr/colorOnSurface" />
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_email" />
 
                         <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:layout_weight="1"
-                            android:text="@string/settings_email"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/settings_email" />
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/author_email"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="14sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Value"
+                            android:text="@string/author_email" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="0.5dp"
-                        android:layout_marginHorizontal="16dp"
-                        android:background="?attr/colorOutlineVariant" />
+                    <View style="@style/Widget.HtmlNotes.Settings.Divider" />
 
                     <!-- GitHub（点击打开主页） -->
                     <LinearLayout
                         android:id="@+id/rowGithub"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
+                        style="@style/Widget.HtmlNotes.Settings.Row">
 
                         <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_link"
-                            app:tint="?attr/colorOnSurface" />
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_link" />
 
                         <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:layout_weight="1"
-                            android:text="@string/settings_github"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/settings_github" />
 
                         <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/author_github"
-                            android:textColor="?attr/colorPrimary"
-                            android:textSize="14sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Value"
+                            android:text="@string/author_github" />
                     </LinearLayout>
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="0.5dp"
-                        android:layout_marginHorizontal="16dp"
-                        android:background="?attr/colorOutlineVariant" />
+                    <View style="@style/Widget.HtmlNotes.Settings.Divider" />
 
                     <!-- 版本 -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
+                    <LinearLayout style="@style/Widget.HtmlNotes.Settings.RowBase">
 
                         <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:src="@drawable/ic_info"
-                            app:tint="?attr/colorOnSurface" />
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_info" />
 
                         <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:layout_weight="1"
-                            android:text="@string/settings_version"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/settings_version" />
 
                         <TextView
                             android:id="@+id/versionValue"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="14sp" />
+                            style="@style/Widget.HtmlNotes.Settings.Value" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

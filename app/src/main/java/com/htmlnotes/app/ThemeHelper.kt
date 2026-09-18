@@ -34,18 +34,6 @@ object ThemeHelper {
         R.string.theme_color_forest
     )
 
-    /** 设置页色点预览（浅色主色）。 */
-    val previewColors = intArrayOf(
-        0xFF4F5BDB.toInt(),
-        0xFF00796B.toInt(),
-        0xFFB4341F.toInt(),
-        0xFF8F4B00.toInt(),
-        0xFFB2396D.toInt(),
-        0xFF6E4BCC.toInt(),
-        0xFF0061A4.toInt(),
-        0xFF2E6932.toInt()
-    )
-
     /** 当前选中的主题色索引（越界时回退到默认）。 */
     fun currentIndex(context: Context): Int {
         val idx = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)

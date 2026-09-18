@@ -7,13 +7,26 @@
     <color name="md_on_primary_container">#E0E1FF</color>
     <color name="md_secondary">#C0C3DB</color>
     <color name="md_on_secondary">#2A2D3D</color>
+    <color name="md_secondary_container">#47464F</color>
+    <color name="md_on_secondary_container">#E5E4EE</color>
     <color name="md_surface">#14141A</color>
     <color name="md_on_surface">#E4E2E9</color>
     <color name="md_surface_variant">#232329</color>
+    <color name="md_surface_container_high">#2E2E37</color>
     <color name="md_on_surface_variant">#C6C6D0</color>
     <color name="md_outline">#3A3A44</color>
+    <color name="md_outline_variant">#2C2C34</color>
     <color name="md_error">#FFB4AB</color>
+    <color name="hl_text">#FFE082</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="ic_launcher_background">#4F5BDB</color>
+
+    <!-- 卡片低饱和深色底色（深色模式）：与浅色同名的 id，自动按配置取色 -->
+    <color name="card_bg_0">#34312A</color>
+    <color name="card_bg_1">#2A332D</color>
+    <color name="card_bg_2">#2B323D</color>
+    <color name="card_bg_3">#39302E</color>
+    <color name="card_bg_4">#322F38</color>
+    <color name="card_bg_5">#2A3433</color>
 </resources>

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  布局公共样式：编辑器工具栏按钮、设置页行、"更多"弹层行的重复属性收敛于此。
+  布局文件只保留 id、文案与个别差异项（尺寸覆盖、配色覆盖等）。
+-->
+<resources>
+
+    <!-- 分组锚点：点号命名会派生隐式父样式，必须先定义空锚点 -->
+    <style name="Widget.HtmlNotes.Tool" parent="" />
+    <style name="Widget.HtmlNotes.Settings" parent="" />
+    <style name="Widget.HtmlNotes.Sheet" parent="" />
+
+    <!-- ════════ 编辑器：顶栏图标按钮 ════════ -->
+    <style name="Widget.HtmlNotes.TopIconButton" parent="Widget.AppCompat.ImageButton">
+        <item name="android:layout_width">48dp</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:background">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:tint">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- ════════ 编辑器：底部工具栏按钮 ════════ -->
+
+    <!-- 一级工具栏文字按钮（B/I/U/S/Aa）：40dp 方块，选中态由 bg_tool_btn 描色 -->
+    <style name="Widget.HtmlNotes.Tool.Square">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:background">@drawable/bg_tool_btn</item>
+        <item name="android:foreground">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/tool_btn_text</item>
+    </style>
+
+    <!-- 一级工具栏图标按钮：40dp，图标色随选中态切换 -->
+    <style name="Widget.HtmlNotes.Tool.Icon40" parent="Widget.AppCompat.ImageButton">
+        <item name="android:layout_width">40dp</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:background">@drawable/bg_tool_btn</item>
+        <item name="android:foreground">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:padding">8dp</item>
+        <item name="android:tint">@color/tool_btn_tint</item>
+    </style>
+
+    <!-- 面板内图标按钮：36dp 紧凑态 -->
+    <style name="Widget.HtmlNotes.Tool.Icon36" parent="Widget.HtmlNotes.Tool.Icon40">
+        <item name="android:layout_width">36dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:padding">6dp</item>
+    </style>
+
+    <!-- 面板内文字胶囊（标题层级 / Aa / A / 字体名） -->
+    <style name="Widget.HtmlNotes.Tool.Chip">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">34dp</item>
+        <item name="android:background">@drawable/bg_tool_btn</item>
+        <item name="android:foreground">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingHorizontal">10dp</item>
+        <item name="android:textColor">@color/tool_btn_text</item>
+    </style>
+
+    <!-- 代码片段胶囊：稍宽 + 统一 13sp -->
+    <style name="Widget.HtmlNotes.Tool.Chip.Wide" parent="Widget.HtmlNotes.Tool.Chip">
+        <item name="android:paddingHorizontal">12dp</item>
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <!-- 键盘收起时的工具栏胶囊入口 -->
+    <style name="Widget.HtmlNotes.Tool.Capsule">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">40dp</item>
+        <item name="android:layout_gravity">center_horizontal</item>
+        <item name="android:background">@drawable/bg_toolbar_dock</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingHorizontal">18dp</item>
+    </style>
+
+    <!-- ════════ 设置页 ════════ -->
+
+    <!-- 分区圆角卡片 -->
+    <style name="Widget.HtmlNotes.Settings.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="cardCornerRadius">20dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardBackgroundColor">?attr/colorSurfaceVariant</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <!-- 分区标题 -->
+    <style name="Widget.HtmlNotes.Settings.SectionTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:layout_marginBottom">6dp</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- 信息行基类：不可点击（作者/版本等纯展示行） -->
+    <style name="Widget.HtmlNotes.Settings.RowBase">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:padding">16dp</item>
+    </style>
+
+    <!-- 设置行：图标 + 标题（+ 可选值），整行可点 -->
+    <style name="Widget.HtmlNotes.Settings.Row" parent="Widget.HtmlNotes.Settings.RowBase">
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="Widget.HtmlNotes.Settings.Icon">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="android:tint">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="Widget.HtmlNotes.Settings.Title">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">16dp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">middle</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="Widget.HtmlNotes.Settings.Value">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">middle</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Widget.HtmlNotes.Settings.Divider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">0.5dp</item>
+        <item name="android:layout_marginHorizontal">16dp</item>
+        <item name="android:background">?attr/colorOutlineVariant</item>
+    </style>
+
+    <!-- ════════ "更多"底部弹层 ════════ -->
+    <style name="Widget.HtmlNotes.Sheet.Row">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingHorizontal">20dp</item>
+        <item name="android:paddingVertical">14dp</item>
+    </style>
+
+    <style name="Widget.HtmlNotes.Sheet.Icon">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="android:tint">?attr/colorPrimary</item>
+    </style>
+
+    <style name="Widget.HtmlNotes.Sheet.Title">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">18dp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+</resources>

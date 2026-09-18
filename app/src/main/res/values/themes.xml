@@ -7,14 +7,17 @@
         <item name="colorOnPrimaryContainer">@color/md_on_primary_container</item>
         <item name="colorSecondary">@color/md_secondary</item>
         <item name="colorOnSecondary">@color/md_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/md_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/md_on_secondary_container</item>
         <item name="colorSurface">@color/md_surface</item>
         <item name="colorOnSurface">@color/md_on_surface</item>
         <item name="colorSurfaceVariant">@color/md_surface_variant</item>
+        <item name="colorSurfaceContainerHigh">@color/md_surface_container_high</item>
         <item name="colorOnSurfaceVariant">@color/md_on_surface_variant</item>
         <item name="colorOutline">@color/md_outline</item>
+        <item name="colorOutlineVariant">@color/md_outline_variant</item>
         <item name="colorError">@color/md_error</item>
         <item name="android:windowBackground">@color/md_surface</item>
-        <item name="android:statusBarColor">@color/md_surface</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
 
@@ -22,12 +25,15 @@
         <item name="android:textStyle">bold</item>
     </style>
 
-    <!-- 主题色覆盖层（运行时按需 applyStyle） -->
+    <!-- 主题色覆盖层（运行时按需 applyStyle）：primary + secondary 两套容器色，
+         保证 chip / badge / 悬浮条等使用 secondaryContainer 的组件也跟随换肤 -->
     <style name="ThemePromptNoteIndigo">
         <item name="colorPrimary">@color/theme_indigo_primary</item>
         <item name="colorOnPrimary">@color/theme_indigo_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_indigo_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_indigo_on_primary_container</item>
+        <item name="colorSecondaryContainer">@color/theme_indigo_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_indigo_on_secondary_container</item>
     </style>
 
     <style name="ThemePromptNoteTeal">
@@ -35,6 +41,8 @@
         <item name="colorOnPrimary">@color/theme_teal_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_teal_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_teal_on_primary_container</item>
+        <item name="colorSecondaryContainer">@color/theme_teal_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_teal_on_secondary_container</item>
     </style>
 
     <style name="ThemePromptNoteCoral">
@@ -42,6 +50,8 @@
         <item name="colorOnPrimary">@color/theme_coral_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_coral_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_coral_on_primary_container</item>
+        <item name="colorSecondaryContainer">@color/theme_coral_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_coral_on_secondary_container</item>
     </style>
 
     <style name="ThemePromptNoteOrange">
@@ -49,6 +59,8 @@
         <item name="colorOnPrimary">@color/theme_orange_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_orange_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_orange_on_primary_container</item>
+        <item name="colorSecondaryContainer">@color/theme_orange_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_orange_on_secondary_container</item>
     </style>
 
     <style name="ThemePromptNoteRose">
@@ -56,6 +68,8 @@
         <item name="colorOnPrimary">@color/theme_rose_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_rose_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_rose_on_primary_container</item>
+        <item name="colorSecondaryContainer">@color/theme_rose_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_rose_on_secondary_container</item>
     </style>
 
     <style name="ThemePromptNoteViolet">
@@ -63,6 +77,8 @@
         <item name="colorOnPrimary">@color/theme_violet_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_violet_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_violet_on_primary_container</item>
+        <item name="colorSecondaryContainer">@color/theme_violet_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_violet_on_secondary_container</item>
     </style>
 
     <style name="ThemePromptNoteSky">
@@ -70,6 +86,8 @@
         <item name="colorOnPrimary">@color/theme_sky_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_sky_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_sky_on_primary_container</item>
+        <item name="colorSecondaryContainer">@color/theme_sky_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_sky_on_secondary_container</item>
     </style>
 
     <style name="ThemePromptNoteForest">
@@ -77,5 +95,7 @@
         <item name="colorOnPrimary">@color/theme_forest_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_forest_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_forest_on_primary_container</item>
+        <item name="colorSecondaryContainer">@color/theme_forest_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/theme_forest_on_secondary_container</item>
     </style>
 </resources>

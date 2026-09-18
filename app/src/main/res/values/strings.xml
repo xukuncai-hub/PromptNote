@@ -16,6 +16,8 @@
     <string name="unpin">取消置顶</string>
     <string name="toggle_layout">切换视图</string>
     <string name="note_type">类型</string>
+    <string name="a11y_pinned">已置顶</string>
+    <string name="edit_note_named">编辑便签：%1$s</string>
     <string name="delete_title">删除便签</string>
     <string name="delete_message">确定要删除「%1$s」吗？</string>
     <string name="delete">删除</string>
@@ -32,8 +34,7 @@
     <string name="more_menu">更多</string>
     <string name="unnamed_text">未命名便签</string>
     <string name="unnamed_html">未命名笔记</string>
-    <string name="meta_format">%1$s | %2$d字 | %3$s</string>
-    <string name="notebook_default">默认笔记本</string>
+    <string name="untitled_note">无标题笔记</string>
     <string name="btn_preview">预览</string>
     <string name="btn_save">保存</string>
     <string name="btn_save_changes">保存修改</string>
@@ -43,7 +44,10 @@
     <string name="check_list">清单</string>
     <string name="format">格式</string>
     <string name="insert_attach">插入附件</string>
-    <string name="insert_placeholder">插入附件功能待接入</string>
+    <string name="insert_code">插入代码</string>
+    <string name="copy_all_code">复制全部代码</string>
+    <string name="saved">已保存 ✓</string>
+    <string name="unsaved">未保存</string>
 
     <!-- 格式设置底部弹窗 -->
     <string name="sheet_close">关闭</string>
@@ -63,10 +67,19 @@
     <string name="para_outdent">减少缩进</string>
     <string name="para_indent">增加缩进</string>
     <string name="para_align_left">左对齐</string>
+    <string name="para_align_center">居中对齐</string>
     <string name="para_align_right">右对齐</string>
+    <string name="para_align_justify">两端对齐</string>
+    <string name="para_quote">引用</string>
+    <string name="para_code">行内代码</string>
+    <string name="insert_link">插入链接</string>
+    <string name="insert_image">插入图片</string>
+    <string name="format_clear">清除格式</string>
+    <string name="link_hint">请输入链接地址</string>
+    <string name="image_hint">请输入图片地址（http/https）</string>
+    <string name="style_underline">下划线</string>
     <string name="insert_hr">分割线</string>
     <string name="font_system">系统字体</string>
-    <string name="font_system_on">系统字体 ✓</string>
     <string name="font_size">字号</string>
     <string name="font_color">字体颜色</string>
 
@@ -88,12 +101,47 @@
     <string name="rich_undo">撤销</string>
     <string name="rich_redo">重做</string>
     <string name="rich_clear">清除格式</string>
+    <string name="panel_paragraph">段落格式</string>
+    <string name="panel_format">文字格式</string>
+    <string name="edit_content">编辑</string>
+
+    <!-- 工具栏操作反馈（轻量 toast） -->
+    <string name="toast_bold">已加粗</string>
+    <string name="toast_italic">已斜体</string>
+    <string name="toast_underline">已下划线</string>
+    <string name="toast_strike">已删除线</string>
+    <string name="toast_align">已对齐</string>
+    <string name="toast_undo">已撤销</string>
+    <string name="toast_redo">已重做</string>
+    <string name="toast_indent">已缩进</string>
+    <string name="toast_outdent">已减少缩进</string>
+    <string name="toast_format">已格式化代码</string>
+    <string name="toast_cleared">已清空代码</string>
+    <string name="toast_clear_confirm">确定要清空全部代码吗？</string>
+    <string name="toast_highlight">已高亮所选文字</string>
+    <string name="toast_color">文字颜色已应用</string>
+    <string name="toast_size">字号已设为 %1$d</string>
+    <string name="toast_link">已插入链接</string>
+    <string name="toast_image">已插入图片</string>
+    <string name="toast_hr">已插入分割线</string>
+    <string name="toast_font">字体已切换</string>
+
+    <!-- 代码模式编码工具栏 -->
+    <string name="code_indent">缩进</string>
+    <string name="code_outdent">反向缩进</string>
+    <string name="format_code">格式化代码</string>
+    <string name="clear_code">清空代码</string>
+    <string name="code_snippets">代码片段</string>
 
     <!-- 预览 -->
     <string name="refresh">刷新</string>
     <string name="copy_code">复制内容</string>
     <string name="share">分享</string>
     <string name="copied">内容已复制</string>
+    <string name="preview_load_failed">页面加载失败</string>
+    <string name="preview_load_failed_hint">可能是网络不可用或页面引用的外部资源（如 CDN 脚本）无法访问。请检查网络后重试。</string>
+    <string name="preview_script_failed">部分外部脚本加载失败，显示可能不完整</string>
+    <string name="retry">重试</string>
 
     <!-- 设置 -->
     <string name="settings">设置</string>

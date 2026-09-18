@@ -2,14 +2,20 @@ package com.htmlnotes.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.GridLayoutManager
 import com.htmlnotes.app.databinding.ActivityMainBinding
 import java.nio.charset.Charset
+
+/** 搜索框输入防抖窗口：连续输入时只跑最后一次过滤。 */
+private const val SEARCH_DEBOUNCE_MS = 300L
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,6 +25,13 @@ class MainActivity : AppCompatActivity() {
     private var allItems: List<Project> = emptyList()
     private var isGrid: Boolean = true
     private var lastThemeColor = ThemeHelper.DEFAULT
+    private val searchHandler = Handler(Looper.getMainLooper())
+    private val searchTask = Runnable { applyFilter() }
+    /** 便签目录扫描 + JSON 解析在后台线程进行，期间合并多余的刷新请求。 */
+    private var loading = false
+    private var pendingRefresh = false
+    /** 首次后台载入完成前不显示空列表提示，避免冷启动闪现「暂无便签」。 */
+    private var loadedOnce = false
 
     private val importLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -27,7 +40,7 @@ class MainActivity : AppCompatActivity() {
                     ?.bufferedReader(Charset.forName("UTF-8"))
                     ?.use { it.readText() }
                 if (!text.isNullOrEmpty()) {
-                    store.create("导入的笔记", text)
+                    store.create(getString(R.string.imported_note), text)
                     refresh()
                 }
             }
@@ -37,15 +50,21 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         ThemeHelper.apply(this)
         lastThemeColor = ThemeHelper.currentIndex(this)
+        enableEdgeToEdge()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Edge-to-edge：toolbar 背景伸入状态栏，列表/FAB 避让导航栏与刘海
+        binding.toolbar.applySystemBarInsets(top = true)
+        binding.recycler.applySystemBarInsets(left = true, right = true, bottom = true)
+        binding.fabNew.applySystemBarInsets(right = true, bottom = true, asMargin = true)
+
         store = ProjectStore(this)
         isGrid = getSharedPreferences("prefs", MODE_PRIVATE).getBoolean("grid", true)
-        adapter = ProjectAdapter(emptyList()) { project, action ->
+        adapter = ProjectAdapter(emptyList()) { project, action, card ->
             when (action) {
-                ProjectAdapter.Action.OPEN -> openPreview(project)
-                ProjectAdapter.Action.EDIT -> openEditor(project)
+                ProjectAdapter.Action.OPEN -> openPreview(project, card)
+                ProjectAdapter.Action.EDIT -> openEditor(project, card = card)
                 ProjectAdapter.Action.DELETE -> confirmDelete(project)
                 ProjectAdapter.Action.PIN -> showNoteMenu(project)
             }
@@ -55,7 +74,22 @@ class MainActivity : AppCompatActivity() {
 
         binding.fabNew.setOnClickListener { showTypeChooser() }
         binding.btnEmptyCreate.setOnClickListener { showTypeChooser() }
-        binding.searchEdit.doAfterTextChanged { applyFilter() }
+        binding.searchEdit.doAfterTextChanged {
+            searchHandler.removeCallbacks(searchTask)
+            searchHandler.postDelayed(searchTask, SEARCH_DEBOUNCE_MS)
+        }
+
+        // 新建按钮弹出动画（弹性放大）
+        binding.fabNew.post {
+            binding.fabNew.scaleX = 0.5f
+            binding.fabNew.scaleY = 0.5f
+            binding.fabNew.alpha = 0f
+            binding.fabNew.animate()
+                .scaleX(1f).scaleY(1f).alpha(1f)
+                .setDuration(320)
+                .setInterpolator(android.view.animation.OvershootInterpolator(1.6f))
+                .start()
+        }
 
         binding.toolbar.inflateMenu(R.menu.menu_main)
         updateToggleIcon()
@@ -85,6 +119,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.action_settings -> {
                     startActivity(Intent(this, SettingsActivity::class.java))
+                    overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out)
                     true
                 }
                 R.id.action_toggle_layout -> {
@@ -115,9 +150,36 @@ class MainActivity : AppCompatActivity() {
         refresh()
     }
 
+    override fun onDestroy() {
+        searchHandler.removeCallbacks(searchTask)
+        super.onDestroy()
+    }
+
+    /** 后台线程读取便签文件，回主线程刷新列表；加载期间的重复请求合并为最后一次。 */
     private fun refresh() {
-        allItems = store.list()
-        applyFilter()
+        if (loading) {
+            pendingRefresh = true
+            return
+        }
+        loading = true
+        Thread {
+            val items = store.list()
+            runOnUiThread {
+                loading = false
+                if (!isFinishing && !isDestroyed) {
+                    val wasEmpty = allItems.isEmpty()
+                    allItems = items
+                    loadedOnce = true
+                    applyFilter()
+                    // 卡片错落入场动画只在首次载入时播放：每次 onResume 都重放会让从编辑器返回时整个列表跳动
+                    if (wasEmpty && allItems.isNotEmpty()) binding.recycler.scheduleLayoutAnimation()
+                }
+                if (pendingRefresh) {
+                    pendingRefresh = false
+                    refresh()
+                }
+            }
+        }.start()
     }
 
     private fun applyFilter() {
@@ -132,7 +194,7 @@ class MainActivity : AppCompatActivity() {
         }
         adapter.submit(filtered)
         binding.emptyLayout.visibility =
-            if (allItems.isEmpty()) android.view.View.VISIBLE else android.view.View.GONE
+            if (allItems.isEmpty() && loadedOnce) android.view.View.VISIBLE else android.view.View.GONE
         binding.noResult.visibility =
             if (allItems.isNotEmpty() && filtered.isEmpty()) android.view.View.VISIBLE
             else android.view.View.GONE
@@ -143,6 +205,7 @@ class MainActivity : AppCompatActivity() {
         isGrid = !isGrid
         getSharedPreferences("prefs", MODE_PRIVATE).edit().putBoolean("grid", isGrid).apply()
         (binding.recycler.layoutManager as GridLayoutManager).spanCount = if (isGrid) 2 else 1
+        binding.recycler.scheduleLayoutAnimation()
         updateToggleIcon()
     }
 
@@ -152,12 +215,18 @@ class MainActivity : AppCompatActivity() {
             ?.setIcon(if (isGrid) R.drawable.ic_list else R.drawable.ic_grid)
     }
 
-    /** 文字便签打开即编辑（所见即所得），HTML 便签打开预览。 */
-    private fun openPreview(p: Project) {
+    /** 文字便签打开即编辑（所见即所得），HTML 便签打开预览。card 非空时走容器变换过渡。 */
+    private fun openPreview(p: Project, card: android.view.View?) {
         if (p.type == Project.TYPE_TEXT) {
-            openEditor(p)
+            openEditor(p, card = card)
         } else {
-            startActivity(Intent(this, PreviewActivity::class.java).putExtra("id", p.id))
+            startActivity(
+                Intent(this, PreviewActivity::class.java).apply {
+                    putExtra("id", p.id)
+                    if (card != null) NoteTransition.putStartBounds(this, card)
+                }
+            )
+            if (card == null) overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out)
         }
     }
 
@@ -174,12 +243,14 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun openEditor(p: Project?, type: String = Project.TYPE_HTML) {
+    private fun openEditor(p: Project?, type: String = Project.TYPE_HTML, card: android.view.View? = null) {
         startActivity(
             Intent(this, EditorActivity::class.java).apply {
                 if (p != null) putExtra("id", p.id) else putExtra("type", type)
+                if (card != null) NoteTransition.putStartBounds(this, card)
             }
         )
+        if (card == null) overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out)
     }
 
     /** 长按菜单：置顶 / 取消置顶、删除。 */

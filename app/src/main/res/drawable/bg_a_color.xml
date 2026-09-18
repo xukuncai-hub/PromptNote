@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 文字颜色按钮：A 字下方一条主题色短线，示意"文字颜色" -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@android:color/transparent" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item
+        android:bottom="3dp"
+        android:gravity="bottom|center_horizontal"
+        android:left="8dp"
+        android:right="8dp">
+        <shape android:shape="rectangle">
+            <solid android:color="?attr/colorPrimary" />
+            <size android:height="2dp" />
+            <corners android:radius="1dp" />
+        </shape>
+    </item>
+</layer-list>

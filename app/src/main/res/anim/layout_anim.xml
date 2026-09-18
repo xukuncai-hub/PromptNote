@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 列表布局入场动画：卡片逐个错落出现 -->
+<layoutAnimation xmlns:android="http://schemas.android.com/apk/res/android"
+    android:animation="@anim/item_anim"
+    android:animationOrder="random"
+    android:delay="6%" />

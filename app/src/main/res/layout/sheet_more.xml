@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 编辑器"更多"操作底部弹层：插入代码(仅 HTML) / 分享 / 删除（预览已移到顶栏常驻） -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="10dp"
+    android:paddingBottom="16dp">
+
+    <!-- 拖动把手 -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_handle"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/sheetTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="14dp"
+        android:text="@string/more_menu"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:id="@+id/itemInsert"
+        style="@style/Widget.HtmlNotes.Sheet.Row"
+        android:layout_marginTop="4dp"
+        android:visibility="gone">
+
+        <ImageView
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_plus" />
+
+        <TextView
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/insert_code" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/itemShare"
+        style="@style/Widget.HtmlNotes.Sheet.Row">
+
+        <ImageView
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_share" />
+
+        <TextView
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/share" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/itemDelete"
+        style="@style/Widget.HtmlNotes.Sheet.Row">
+
+        <ImageView
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_delete"
+            app:tint="?attr/colorError" />
+
+        <TextView
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/delete"
+            android:textColor="?attr/colorError" />
+    </LinearLayout>
+</LinearLayout>

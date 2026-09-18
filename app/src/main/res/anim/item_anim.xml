@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 列表卡片入场动画（单个 item）：淡入 + 上浮 + 轻微放大 -->
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="280"
+    android:interpolator="@android:interpolator/decelerate_cubic">
+    <alpha
+        android:fromAlpha="0.0"
+        android:toAlpha="1.0" />
+    <translate
+        android:fromYDelta="22dp"
+        android:toYDelta="0dp" />
+    <scale
+        android:fromXScale="0.96"
+        android:toXScale="1.0"
+        android:fromYScale="0.96"
+        android:toYScale="1.0"
+        android:pivotX="50%"
+        android:pivotY="50%" />
+</set>
