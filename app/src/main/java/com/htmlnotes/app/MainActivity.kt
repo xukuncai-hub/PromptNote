@@ -125,6 +125,14 @@ class MainActivity : AppCompatActivity() {
             searchHandler.removeCallbacks(searchTask)
             searchHandler.postDelayed(searchTask, SEARCH_DEBOUNCE_MS)
         }
+        binding.searchLayout.setEndIconOnClickListener {
+            binding.searchEdit.text?.clear()
+            binding.searchEdit.clearFocus()
+            binding.root.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(binding.searchEdit.windowToken, 0)
+            applyFilter()
+        }
 
         // 新建按钮弹出动画（弹性放大）
         binding.fabNew.post {

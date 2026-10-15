@@ -289,11 +289,17 @@ class EditorActivity : AppCompatActivity() {
 
         // ---- 顶栏交互 ----
         binding.btnBack.setOnClickListener { saveAndExit() }
-        // 返回键 / 返回手势：键盘显示时先收起键盘（与多数编辑器一致，工具栏也随之收回胶囊），
+        // 返回键 / 返回手势：格式面板展开时先收起面板，键盘显示时先收起键盘，
         // 再按一次才保存退出。Android 13+ 预测式返回同样生效。
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (lastImeVisible == true) hideKeyboard() else saveAndExit()
+                if (visiblePanelHeight() > 0) {
+                    closePanels()
+                } else if (lastImeVisible == true) {
+                    hideKeyboard()
+                } else {
+                    saveAndExit()
+                }
             }
         })
         // 面板开合会让正文高度变化（weight 分配），这正是选区可能被挤出视口的时刻。
@@ -738,6 +744,9 @@ class EditorActivity : AppCompatActivity() {
             "s.removeAllRanges();s.addRange(nr);}refreshState();"
 
     private fun exec(cmd: String, value: String? = null) {
+        if (binding.edTitle.hasFocus()) {
+            binding.edTitle.clearFocus()
+        }
         if (noteType == Project.TYPE_TEXT) {
             binding.richWeb.requestFocus()
             val js = when (cmd) {

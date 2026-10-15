@@ -46,15 +46,18 @@
         <item name="android:letterSpacing">-0.01</item>
     </style>
 
-    <!-- 主题色覆盖层（运行时按需 applyStyle）：primary + secondary 两套容器色，
-         保证 chip / badge / 悬浮条等使用 secondaryContainer 的组件也跟随换肤 -->
+    <!-- 主题色覆盖层（运行时按需 applyStyle）：全套统一 Material 3 色调属性，
+         保证下拉框 / 选区光标 / chip / badge / 悬浮条等所有组件严格跟随换肤 -->
     <style name="ThemePromptNoteIndigo">
         <item name="colorPrimary">@color/theme_indigo_primary</item>
         <item name="colorOnPrimary">@color/theme_indigo_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_indigo_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_indigo_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_indigo_primary</item>
         <item name="colorSecondaryContainer">@color/theme_indigo_secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/theme_indigo_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_indigo_primary</item>
+        <item name="colorControlActivated">@color/theme_indigo_primary</item>
     </style>
 
     <style name="ThemePromptNoteTeal">
@@ -62,8 +65,11 @@
         <item name="colorOnPrimary">@color/theme_teal_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_teal_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_teal_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_teal_primary</item>
         <item name="colorSecondaryContainer">@color/theme_teal_secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/theme_teal_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_teal_primary</item>
+        <item name="colorControlActivated">@color/theme_teal_primary</item>
     </style>
 
     <style name="ThemePromptNoteCoral">
@@ -71,8 +77,11 @@
         <item name="colorOnPrimary">@color/theme_coral_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_coral_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_coral_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_coral_primary</item>
         <item name="colorSecondaryContainer">@color/theme_coral_secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/theme_coral_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_coral_primary</item>
+        <item name="colorControlActivated">@color/theme_coral_primary</item>
     </style>
 
     <style name="ThemePromptNoteOrange">
@@ -80,8 +89,11 @@
         <item name="colorOnPrimary">@color/theme_orange_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_orange_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_orange_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_orange_primary</item>
         <item name="colorSecondaryContainer">@color/theme_orange_secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/theme_orange_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_orange_primary</item>
+        <item name="colorControlActivated">@color/theme_orange_primary</item>
     </style>
 
     <style name="ThemePromptNoteRose">
@@ -89,8 +101,11 @@
         <item name="colorOnPrimary">@color/theme_rose_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_rose_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_rose_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_rose_primary</item>
         <item name="colorSecondaryContainer">@color/theme_rose_secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/theme_rose_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_rose_primary</item>
+        <item name="colorControlActivated">@color/theme_rose_primary</item>
     </style>
 
     <style name="ThemePromptNoteViolet">
@@ -98,8 +113,11 @@
         <item name="colorOnPrimary">@color/theme_violet_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_violet_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_violet_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_violet_primary</item>
         <item name="colorSecondaryContainer">@color/theme_violet_secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/theme_violet_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_violet_primary</item>
+        <item name="colorControlActivated">@color/theme_violet_primary</item>
     </style>
 
     <style name="ThemePromptNoteSky">
@@ -107,8 +125,11 @@
         <item name="colorOnPrimary">@color/theme_sky_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_sky_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_sky_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_sky_primary</item>
         <item name="colorSecondaryContainer">@color/theme_sky_secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/theme_sky_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_sky_primary</item>
+        <item name="colorControlActivated">@color/theme_sky_primary</item>
     </style>
 
     <style name="ThemePromptNoteForest">
@@ -116,7 +137,10 @@
         <item name="colorOnPrimary">@color/theme_forest_on_primary</item>
         <item name="colorPrimaryContainer">@color/theme_forest_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/theme_forest_on_primary_container</item>
+        <item name="colorSecondary">@color/theme_forest_primary</item>
         <item name="colorSecondaryContainer">@color/theme_forest_secondary_container</item>
         <item name="colorOnSecondaryContainer">@color/theme_forest_on_secondary_container</item>
+        <item name="colorTertiary">@color/theme_forest_primary</item>
+        <item name="colorControlActivated">@color/theme_forest_primary</item>
     </style>
 </resources>
