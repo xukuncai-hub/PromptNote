@@ -214,4 +214,21 @@
     <!-- 编辑器内轻提示 -->
     <string name="tip_undone">已撤销</string>
     <string name="tip_redone">已重做</string>
+
+    <!-- 图片交互与操作面板 -->
+    <string name="image_action_title">图片选项</string>
+    <string name="image_action_subtitle">排版与图片操作</string>
+    <string name="image_action_view_full">查看大图</string>
+    <string name="image_action_view_full_desc">全屏高清查看原图</string>
+    <string name="image_action_insert_above">在上方输入文字</string>
+    <string name="image_action_insert_above_desc">在图片上方新建段落并开始打字</string>
+    <string name="image_action_insert_below">在下方输入文字</string>
+    <string name="image_action_insert_below_desc">在图片下方新建段落并开始打字</string>
+    <string name="image_action_replace">从相册更换图片</string>
+    <string name="image_action_replace_desc">重新选取一张图片替换当前图片</string>
+    <string name="image_action_delete">删除此图片</string>
+    <string name="image_action_delete_desc">从当前便签中移除该图片并清理空行</string>
+    <string name="toast_image_replaced">已更新图片</string>
+    <string name="toast_image_deleted">已删除图片</string>
+    <string name="action_close">关闭</string>
 </resources>

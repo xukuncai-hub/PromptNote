@@ -49,9 +49,12 @@ import androidx.lifecycle.lifecycleScope
 import com.htmlnotes.app.databinding.ActivityEditorBinding
 import com.htmlnotes.app.databinding.ItemPaletteColorBinding
 import com.htmlnotes.app.databinding.SheetColorPickerBinding
+import com.htmlnotes.app.databinding.SheetImageActionBinding
+import com.htmlnotes.app.databinding.DialogFullscreenImageBinding
 import com.htmlnotes.app.databinding.SheetInsertImageBinding
 import com.htmlnotes.app.databinding.SheetMoreBinding
 import com.htmlnotes.app.databinding.ViewSelectionBarBinding
+import android.app.Dialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -151,6 +154,7 @@ class EditorActivity : AppCompatActivity() {
      */
     @Volatile
     private var richCache: String? = null
+    private var pendingReplaceImgId: String? = null
     private val autoSaveIntervalMs = 30_000L
     private val mainHandler = Handler(Looper.getMainLooper())
     private val autoSaveTask = object : Runnable {
@@ -381,7 +385,7 @@ class EditorActivity : AppCompatActivity() {
         }
 
         binding.btnTodo.setOnClickListener {
-            exec("insertHTML", "<div><input type=\"checkbox\"> &nbsp;</div>")
+            exec("insertHTML", "<p class=\"task-item\"><input type=\"checkbox\"><span>&nbsp;</span></p>")
             toast(R.string.todo_menu)
         }
         binding.btnUl.setOnClickListener { exec("insertUnorderedList", null) }
@@ -662,13 +666,22 @@ class EditorActivity : AppCompatActivity() {
                         // 正文自己滚、以及原生主动滚，都会让选区的视口坐标变化：
                         // 不订阅的话滚动之后原生拿到的还是旧坐标，浮条和锚定全都会错位。
                         "window.addEventListener('scroll',refreshState,true);" +
-                        // 点击事件：精准区分复选框与正文聚焦（滑动不触发 click，彻底解决翻看误弹键盘）
+                        // 点击事件：精准区分复选框、图片与正文聚焦（滑动不触发 click，彻底解决翻看误弹键盘）
                         "document.addEventListener('click',function(e){" +
                         "var t=e.target;" +
                         "if(t&&t.tagName==='INPUT'&&t.type==='checkbox'){" +
                         "if(t.checked){t.setAttribute('checked','checked');}else{t.removeAttribute('checked');}" +
                         "refreshState();HtmlNotes.onDirty();return;" +
                         "}" +
+                        "if(t&&t.tagName==='IMG'){" +
+                        "e.preventDefault();e.stopPropagation();" +
+                        "if(document.activeElement&&document.activeElement!==document.body){document.activeElement.blur();}" +
+                        "document.querySelectorAll('#ed img.selected').forEach(function(el){el.classList.remove('selected');});" +
+                        "t.classList.add('selected');" +
+                        "if(!t.id){t.id='img_'+Date.now();}" +
+                        "HtmlNotes.onImageClicked(t.id,t.src);return;" +
+                        "}" +
+                        "document.querySelectorAll('#ed img.selected').forEach(function(el){el.classList.remove('selected');});" +
                         "if(document.activeElement!==ed&&(!ed.contains(t)||t===document.body)){ed.focus();}" +
                         "HtmlNotes.onEditorTap();" +
                         "});" +
@@ -1039,6 +1052,15 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
+        /** 用户轻触图片：弹出图片操作面板（查看大图、前后插入正文、替换、删除），不误弹软键盘 */
+        @JavascriptInterface
+        fun onImageClicked(imgId: String, src: String) {
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                showImageActionSheet(imgId, src)
+            }
+        }
+
         /**
          * 外接键盘快捷键已由页面拦下并执行（Ctrl+B/I/U/Z/Y/A），这里只负责反馈。
          *
@@ -1321,13 +1343,15 @@ class EditorActivity : AppCompatActivity() {
 
     private fun toggleAaPanel() {
         val willShow = binding.panelTextBlock.visibility != View.VISIBLE
-        android.transition.TransitionManager.beginDelayedTransition(
-            binding.toolbarText,
-            android.transition.AutoTransition().apply {
-                interpolator = CouiMotion.EASE_INTERPOLATOR
-                duration = 240
-            }
-        )
+        (binding.toolbarText.parent as? ViewGroup)?.let { parent ->
+            android.transition.TransitionManager.beginDelayedTransition(
+                parent,
+                android.transition.AutoTransition().apply {
+                    interpolator = CouiMotion.EASE_INTERPOLATOR
+                    duration = 220
+                }
+            )
+        }
         binding.panelTextBlock.visibility = if (willShow) View.VISIBLE else View.GONE
         binding.btnToggleAa.isSelected = willShow
     }
@@ -1337,13 +1361,15 @@ class EditorActivity : AppCompatActivity() {
 
     private fun closePanels() {
         if (binding.panelTextBlock.visibility == View.VISIBLE) {
-            android.transition.TransitionManager.beginDelayedTransition(
-                binding.toolbarText,
-                android.transition.AutoTransition().apply {
-                    interpolator = CouiMotion.EASE_INTERPOLATOR
-                    duration = 200
-                }
-            )
+            (binding.toolbarText.parent as? ViewGroup)?.let { parent ->
+                android.transition.TransitionManager.beginDelayedTransition(
+                    parent,
+                    android.transition.AutoTransition().apply {
+                        interpolator = CouiMotion.EASE_INTERPOLATOR
+                        duration = 180
+                    }
+                )
+            }
             binding.panelTextBlock.visibility = View.GONE
             binding.btnToggleAa.isSelected = false
         }
@@ -1751,8 +1777,22 @@ class EditorActivity : AppCompatActivity() {
             val dataUri = ImageHelper.processPickedImage(this@EditorActivity, uri)
             withContext(Dispatchers.Main) {
                 if (dataUri != null) {
+                    val targetReplaceId = pendingReplaceImgId
+                    pendingReplaceImgId = null
+                    if (targetReplaceId != null && noteType == Project.TYPE_TEXT) {
+                        val js = "(function(){" +
+                            "var img=document.getElementById(${JSONObject.quote(targetReplaceId)});" +
+                            "if(img){img.src=${JSONObject.quote(dataUri)};refreshState();HtmlNotes.onDirty();}" +
+                            "})();"
+                        binding.richWeb.evaluateJavascript(js, null)
+                        markDirty()
+                        toast(R.string.toast_image_replaced)
+                        return@withContext
+                    }
+
                     if (noteType == Project.TYPE_TEXT) {
-                        val imgHtml = "<p><img src=\"$dataUri\" alt=\"image\" style=\"max-width:100%; border-radius:12px; margin:8px 0; display:block;\" /></p><p><br></p>"
+                        val imgId = "img_${System.currentTimeMillis()}"
+                        val imgHtml = "<p class=\"note-img-container\"><img id=\"$imgId\" src=\"$dataUri\" alt=\"image\" /></p><p><br></p>"
                         exec("insertHTML", imgHtml)
                     } else {
                         val imgHtml = "<img src=\"$dataUri\" alt=\"image\" style=\"max-width:100%; border-radius:12px;\" />\n"
@@ -1784,7 +1824,8 @@ class EditorActivity : AppCompatActivity() {
                 val url = input.text?.toString()?.trim().orEmpty()
                 if (url.isNotEmpty()) {
                     if (noteType == Project.TYPE_TEXT) {
-                        val imgHtml = "<p><img src=\"$url\" alt=\"image\" style=\"max-width:100%; border-radius:12px; margin:8px 0; display:block;\" /></p><p><br></p>"
+                        val imgId = "img_${System.currentTimeMillis()}"
+                        val imgHtml = "<p class=\"note-img-container\"><img id=\"$imgId\" src=\"$url\" alt=\"image\" /></p><p><br></p>"
                         exec("insertHTML", imgHtml)
                     } else {
                         val imgHtml = "<img src=\"$url\" alt=\"image\" style=\"max-width:100%; border-radius:12px;\" />\n"
@@ -1796,5 +1837,129 @@ class EditorActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /** 弹出图片交互与排版操作底栏 */
+    private fun showImageActionSheet(imgId: String, src: String) {
+        val sheet = SheetImageActionBinding.inflate(layoutInflater)
+        val dialog = BottomSheetDialog(this)
+        dialog.setContentView(sheet.root)
+
+        // 绑定图片缩略图
+        val thumb = ImageHelper.decodeDataUriOrUrl(src)
+        if (thumb != null) {
+            sheet.imgThumb.setImageBitmap(thumb)
+            sheet.imgThumb.imageTintList = null
+        }
+
+        // 触控缩放微动效
+        listOf(
+            sheet.itemActionViewFull,
+            sheet.itemActionInsertAbove,
+            sheet.itemActionInsertBelow,
+            sheet.itemActionReplace,
+            sheet.itemActionDelete
+        ).forEach { it.applyColorOsPressAnim(0.96f) }
+
+        // 1. 查看大图
+        sheet.itemActionViewFull.setOnClickListener {
+            dialog.dismiss()
+            showFullScreenImageViewer(src)
+        }
+
+        // 2. 在上方换行输入文字
+        sheet.itemActionInsertAbove.setOnClickListener {
+            dialog.dismiss()
+            val js = "(function(){" +
+                "var img=document.getElementById(${JSONObject.quote(imgId)});" +
+                "if(!img)return;" +
+                "var p=document.createElement('p');p.innerHTML='<br>';" +
+                "var parent=img.parentElement;" +
+                "if(parent&&parent.id!=='ed'&&parent.children.length===1){" +
+                "parent.parentElement.insertBefore(p,parent);" +
+                "}else{" +
+                "img.parentElement.insertBefore(p,img);" +
+                "}" +
+                "var r=document.createRange();r.setStart(p,0);r.collapse(true);" +
+                "var s=window.getSelection();s.removeAllRanges();s.addRange(r);" +
+                "document.getElementById('ed').focus();" +
+                "refreshState();HtmlNotes.onDirty();HtmlNotes.onEditorTap();" +
+                "})();"
+            binding.richWeb.evaluateJavascript(js, null)
+        }
+
+        // 3. 在下方换行输入文字
+        sheet.itemActionInsertBelow.setOnClickListener {
+            dialog.dismiss()
+            val js = "(function(){" +
+                "var img=document.getElementById(${JSONObject.quote(imgId)});" +
+                "if(!img)return;" +
+                "var p=document.createElement('p');p.innerHTML='<br>';" +
+                "var parent=img.parentElement;" +
+                "if(parent&&parent.id!=='ed'&&parent.children.length===1){" +
+                "parent.parentElement.insertBefore(p,parent.nextSibling);" +
+                "}else{" +
+                "img.parentElement.insertBefore(p,img.nextSibling);" +
+                "}" +
+                "var r=document.createRange();r.setStart(p,0);r.collapse(true);" +
+                "var s=window.getSelection();s.removeAllRanges();s.addRange(r);" +
+                "document.getElementById('ed').focus();" +
+                "refreshState();HtmlNotes.onDirty();HtmlNotes.onEditorTap();" +
+                "})();"
+            binding.richWeb.evaluateJavascript(js, null)
+        }
+
+        // 4. 更换图片
+        sheet.itemActionReplace.setOnClickListener {
+            dialog.dismiss()
+            pendingReplaceImgId = imgId
+            pickImageLauncher.launch("image/*")
+        }
+
+        // 5. 删除此图片
+        sheet.itemActionDelete.setOnClickListener {
+            dialog.dismiss()
+            val js = "(function(){" +
+                "var img=document.getElementById(${JSONObject.quote(imgId)});" +
+                "if(!img)return;" +
+                "var parent=img.parentElement;" +
+                "img.remove();" +
+                "if(parent&&parent.id!=='ed'&&parent.children.length===0&&(!parent.innerText||parent.innerText.trim()==='')){" +
+                "parent.remove();" +
+                "}" +
+                "refreshState();HtmlNotes.onDirty();" +
+                "})();"
+            binding.richWeb.evaluateJavascript(js, null)
+            markDirty()
+            toast(R.string.toast_image_deleted)
+        }
+
+        dialog.setOnDismissListener {
+            evalRich("document.querySelectorAll('#ed img.selected').forEach(function(el){el.classList.remove('selected');});")
+        }
+
+        dialog.show()
+    }
+
+    /** 沉浸式全屏原图查看器 */
+    private fun showFullScreenImageViewer(src: String) {
+        val dialog = Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val fullBinding = DialogFullscreenImageBinding.inflate(layoutInflater)
+        dialog.setContentView(fullBinding.root)
+
+        val bitmap = ImageHelper.decodeDataUriOrUrl(src)
+        if (bitmap != null) {
+            fullBinding.imgFullScreen.setImageBitmap(bitmap)
+        }
+
+        fullBinding.btnCloseFullscreen.applyColorOsPressAnim(0.9f)
+        fullBinding.btnCloseFullscreen.setOnClickListener {
+            dialog.dismiss()
+        }
+        fullBinding.root.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 }

@@ -119,4 +119,27 @@ object ImageHelper {
             null
         }
     }
+
+    /**
+     * 将 Data URI (Base64) 或本地文件路径解码为 Bitmap，供缩略图与大图全屏查看器使用。
+     */
+    fun decodeDataUriOrUrl(src: String): Bitmap? {
+        return try {
+            if (src.startsWith("data:image/")) {
+                val base64Index = src.indexOf("base64,")
+                if (base64Index != -1) {
+                    val base64Str = src.substring(base64Index + 7)
+                    val bytes = Base64.decode(base64Str, Base64.DEFAULT)
+                    BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                } else null
+            } else if (src.startsWith("file://") || src.startsWith("/")) {
+                val path = src.removePrefix("file://")
+                BitmapFactory.decodeFile(path)
+            } else null
+        } catch (e: Throwable) {
+            Log.e(TAG, "decodeDataUriOrUrl failed: ${e.message}", e)
+            null
+        }
+    }
 }
+

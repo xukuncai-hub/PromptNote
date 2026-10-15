@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 全屏大图查看器布局 -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FA050508">
+
+    <ImageView
+        android:id="@+id/imgFullScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+        android:adjustViewBounds="true"
+        android:contentDescription="@string/image_action_view_full"
+        android:scaleType="fitCenter" />
+
+    <!-- 顶部操作栏：关闭按钮 -->
+    <ImageButton
+        android:id="@+id/btnCloseFullscreen"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="36dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/bg_coloros_tool_button"
+        android:contentDescription="@string/action_close"
+        android:padding="12dp"
+        android:src="@drawable/ic_close"
+        app:tint="#FFFFFF" />
+
+</FrameLayout>

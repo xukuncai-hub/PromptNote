@@ -71,26 +71,35 @@ object NoteHtml {
             "#ed h1{font-size:24px;margin:22px 0 12px;line-height:1.35;font-weight:700;letter-spacing:-0.01em;}" +
             "#ed h2{font-size:20px;margin:18px 0 10px;line-height:1.4;font-weight:600;letter-spacing:-0.01em;}" +
             "#ed h3{font-size:16px;margin:14px 0 8px;line-height:1.45;font-weight:600;}" +
-            "#ed p{margin:8px 0;}" +
+            // 空段落防塌陷与正文行距
+            "#ed p:empty::before{content:'\\200B';}" +
+            "#ed p{margin:8px 0;min-height:1.6em;line-height:1.72;}" +
             // ColorOS 标志性圆角引用块
             "#ed blockquote{margin:12px 0;padding:10px 14px;border-left:3.5px solid ${p.accent};" +
             "color:${p.sub};background:${p.quoteBg};border-radius:8px;font-style:normal;}" +
-            "#ed ul,#ed ol{padding-left:1.5em;margin:8px 0;}" +
+            "#ed ul,#ed ol{padding-left:1.6em;margin:8px 0;}" +
+            "#ed li{margin:4px 0;line-height:1.65;}" +
             "#ed a{color:${p.accent};text-decoration:underline;text-underline-offset:2px;}" +
             "#ed code{background:${p.quoteBg};padding:2px 6px;border-radius:4px;" +
             "font-family:Menlo,Consolas,monospace;font-size:0.9em;color:${p.accent};}" +
             "#ed hr{border:none;border-top:0.66px solid ${p.sub};margin:16px 0;opacity:0.35;}" +
-            "#ed img{max-width:100%;height:auto;border-radius:8px;margin:8px 0;box-shadow:0 2px 8px rgba(0,0,0,0.08);}" +
-            "#ed pre{white-space:pre-wrap;word-break:break-word;margin:0;}" +
+            // 图片专属现代排版样式（居中、限制超长竖图高度、圆角与高亮选中反馈）
+            "#ed img{display:block;max-width:100%;max-height:400px;width:auto;height:auto;margin:14px auto;" +
+            "border-radius:12px;box-shadow:0 3px 12px rgba(0,0,0,0.08);cursor:pointer;object-fit:contain;" +
+            "transition:outline 0.18s ease,transform 0.18s cubic-bezier(0.3,0,0.1,1),box-shadow 0.18s ease;" +
+            "-webkit-user-select:none;user-select:none;}" +
+            "#ed img.selected{outline:3.5px solid ${p.accent};outline-offset:3px;transform:scale(0.985);box-shadow:0 4px 16px rgba(0,0,0,0.16);}" +
+            "#ed .note-img-container{text-align:center;margin:12px 0;}" +
+            "#ed pre{white-space:pre-wrap;word-break:break-word;margin:12px 0;background:${p.quoteBg};padding:12px 14px;border-radius:8px;}" +
             // ColorOS 风格表格 (0.66px 细边框 + 圆角)
             "#ed table{width:100%;border-collapse:separate;border-spacing:0;margin:12px 0;font-size:14px;border:0.66px solid rgba(0,0,0,0.12);border-radius:6px;overflow:hidden;}" +
             "#ed th,#ed td{border:0.66px solid rgba(0,0,0,0.1);padding:8px 12px;text-align:left;}" +
             "#ed th{background:${p.quoteBg};font-weight:600;}" +
-            // ColorOS 16 官方 17px 待办复选框交互
-            "#ed .task-item{list-style:none;margin:6px 0;display:flex;align-items:center;}" +
-            "#ed input[type='checkbox']{margin-right:10px;width:18px;height:18px;border-radius:5px;accent-color:${p.accent};cursor:pointer;vertical-align:-2px;}" +
-            "#ed input[type='checkbox']:checked + *{text-decoration:line-through;opacity:0.5;}" +
-            "#ed input[type='checkbox']:checked ~ span{text-decoration:line-through;opacity:0.5;}" +
+            // ColorOS 16 官方 18px 待办复选框交互与穿透删除线
+            "#ed .task-item,#ed p:has(> input[type='checkbox']),#ed div:has(> input[type='checkbox']){" +
+            "display:flex;align-items:center;margin:6px 0;min-height:28px;list-style:none;}" +
+            "#ed input[type='checkbox']{margin-right:10px;width:18px;height:18px;border-radius:5px;accent-color:${p.accent};cursor:pointer;flex-shrink:0;vertical-align:-2px;}" +
+            "#ed input[type='checkbox']:checked ~ *{text-decoration:line-through;opacity:0.48;transition:opacity 0.18s ease;}" +
             // ColorOS 官方 4 色荧光马克笔高亮体系
             "#ed mark{background:#FFE22766;color:inherit;padding:1px 4px;border-radius:3px;}" +
             "#ed mark.hl-yellow{background:#FFE22766;}" +
