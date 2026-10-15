@@ -22,6 +22,26 @@
     <string name="delete_message">确定要删除「%1$s」吗？</string>
     <string name="delete">删除</string>
     <string name="cancel">取消</string>
+    <string name="filter_all">全部</string>
+    <string name="filter_pinned">已置顶</string>
+    <string name="clear_search">清除筛选</string>
+    <string name="search_result_count">找到 %1$d 篇便签</string>
+    <string name="notes_total_count">共 %1$d 篇便签</string>
+    <string name="copy_note_success">便签内容已复制到剪贴板</string>
+    <string name="action_pin_note">置顶便签</string>
+    <string name="action_unpin_note">取消置顶</string>
+    <string name="status_saved">已保存</string>
+    <string name="status_saving">保存中…</string>
+    <string name="status_editing">编辑中</string>
+    <string name="pick_font_color">选择文字颜色</string>
+    <string name="pick_highlight_color">选择高亮颜色</string>
+    <string name="highlight_applied">高亮已应用</string>
+    <string name="highlight_cleared">高亮已清除</string>
+    <string name="stats_notes">便签统计</string>
+    <string name="stats_text">文本便签</string>
+    <string name="stats_html">HTML 便签</string>
+    <string name="stats_pinned">已置顶</string>
+    <string name="stats_storage">存储占用</string>
 
     <!-- 编辑器 -->
     <string name="editor_title">新建便签</string>

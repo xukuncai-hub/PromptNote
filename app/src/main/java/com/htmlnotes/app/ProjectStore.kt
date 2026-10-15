@@ -74,5 +74,8 @@ class ProjectStore(private val context: Context) {
         }
     }
 
+    /** 计算全部便签占用的磁盘大小（字节）。 */
+    fun storageSize(): Long = dir.listFiles()?.sumOf { it.length() } ?: 0L
+
     private fun fileFor(id: String) = File(dir, "$id.json")
 }

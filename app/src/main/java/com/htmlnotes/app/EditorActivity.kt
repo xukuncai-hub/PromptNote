@@ -33,6 +33,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
@@ -42,6 +43,8 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.htmlnotes.app.databinding.ActivityEditorBinding
+import com.htmlnotes.app.databinding.ItemPaletteColorBinding
+import com.htmlnotes.app.databinding.SheetColorPickerBinding
 import com.htmlnotes.app.databinding.SheetMoreBinding
 import com.htmlnotes.app.databinding.ViewSelectionBarBinding
 import org.json.JSONArray
@@ -359,7 +362,7 @@ class EditorActivity : AppCompatActivity() {
         binding.btnAlignR.setOnClickListener { exec("justifyRight", null) }
 
         binding.btnColor.setOnClickListener { pickColor() }
-        binding.btnHl.setOnClickListener { exec("hiliteColor", "#FFEB3B") }
+        binding.btnHl.setOnClickListener { pickHighlight() }
         binding.btnSize.setOnClickListener { pickSize() }
         binding.btnFont.setOnClickListener { cycleFontFamily() }
 
@@ -369,11 +372,6 @@ class EditorActivity : AppCompatActivity() {
         binding.btnHr.setOnClickListener { exec("insertHorizontalRule", null); toast(R.string.toast_hr) }
         binding.btnOutdent.setOnClickListener { exec("outdent", null) }
         binding.btnIndent.setOnClickListener { exec("indent", null) }
-        binding.btnClear.setOnClickListener { exec("removeFormat", null); toast(R.string.rich_clear) }
-        binding.btnIndent.setOnClickListener { exec("indent", null) }
-        binding.btnCode.setOnClickListener { exec("inlineCode", null) }
-        binding.btnLink.setOnClickListener { insertLink() }
-        binding.btnImage.setOnClickListener { insertImage() }
         binding.btnClear.setOnClickListener { exec("removeFormat", null); toast(R.string.rich_clear) }
 
         // ---- 代码模式工具栏（撤销/重做只在顶栏，这里不重复） ----
@@ -444,7 +442,7 @@ class EditorActivity : AppCompatActivity() {
     /** 标题改动同样标记为草稿已变更，保证只改标题也会被自动保存，并显示"未保存"状态。 */
     private fun markDirty() {
         if (noteType == Project.TYPE_TEXT) richDraftChanged = true else htmlDraftChanged = true
-        showSaveState(getString(R.string.unsaved), onSurfaceVariantColor, sticky = true)
+        showSaveState(getString(R.string.status_editing), onSurfaceVariantColor, sticky = true)
     }
 
     /** 顶部右侧"未保存 / 已保存 ✓"状态提示。 */
@@ -741,58 +739,96 @@ class EditorActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun pickColor() {
-        val colors = arrayOf(
-            "#1B1B20" to "黑色",
-            "#757575" to "灰色",
-            "#E53935" to "红色",
-            "#FB8C00" to "橙色",
-            "#FDD835" to "明黄",
-            "#43A047" to "绿色",
-            "#1E88E5" to "蓝色",
-            "#8E24AA" to "紫色"
-        )
-        val density = resources.displayMetrics.density
-        val adapter = object : ArrayAdapter<Pair<String, String>>(this, 0, colors) {
-            override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View {
-                val row = (convertView as? LinearLayout) ?: LinearLayout(this@EditorActivity).apply {
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = android.view.Gravity.CENTER_VERTICAL
-                    setPadding((20 * density).toInt(), (13 * density).toInt(),
-                        (20 * density).toInt(), (13 * density).toInt())
-                    val dot = View(context).apply {
-                        layoutParams = LinearLayout.LayoutParams(
-                            (18 * density).toInt(), (18 * density).toInt()
-                        ).apply { marginEnd = (12 * density).toInt() }
+    private fun showColorPicker(
+        titleRes: Int,
+        colors: Array<Triple<String, String, Boolean>>,
+        onSelect: (String) -> Unit,
+        onReset: (() -> Unit)? = null
+    ) {
+        val sheet = BottomSheetDialog(this)
+        val pickerBinding = SheetColorPickerBinding.inflate(layoutInflater)
+        sheet.setContentView(pickerBinding.root)
+        pickerBinding.pickerTitle.setText(titleRes)
+
+        if (onReset != null) {
+            pickerBinding.btnResetColor.visibility = View.VISIBLE
+            pickerBinding.btnResetColor.setOnClickListener {
+                sheet.dismiss()
+                onReset()
+            }
+        } else {
+            pickerBinding.btnResetColor.visibility = View.GONE
+        }
+
+        class PaletteVH(val b: ItemPaletteColorBinding) : RecyclerView.ViewHolder(b.root)
+        pickerBinding.colorRecycler.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 4)
+        pickerBinding.colorRecycler.adapter = object : RecyclerView.Adapter<PaletteVH>() {
+            override fun getItemCount() = colors.size
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PaletteVH {
+                return PaletteVH(ItemPaletteColorBinding.inflate(layoutInflater, parent, false))
+            }
+            override fun onBindViewHolder(holder: PaletteVH, position: Int) {
+                val (hex, name, isLight) = colors[position]
+                val b = holder.b
+                val colorVal = Color.parseColor(hex)
+                (b.colorCircle.background as? GradientDrawable)?.setColor(colorVal) ?: run {
+                    b.colorCircle.background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(colorVal)
+                        setStroke((1.5f * resources.displayMetrics.density).toInt(), if (isLight) Color.parseColor("#33000000") else Color.TRANSPARENT)
                     }
-                    val label = TextView(context).apply {
-                        textSize = 15f
-                        setTextColor(onSurfaceVariantColor)
-                        layoutParams = LinearLayout.LayoutParams(
-                            0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
-                        )
-                    }
-                    addView(dot)
-                    addView(label)
                 }
-                val (hex, name) = colors[position]
-                ((row.getChildAt(0) as View).background as? GradientDrawable)
-                    ?.setColor(Color.parseColor(hex))
-                    ?: run {
-                        row.getChildAt(0).background = GradientDrawable().apply {
-                            shape = GradientDrawable.OVAL
-                            setColor(Color.parseColor(hex))
-                            setStroke((1 * density).toInt(), Color.parseColor("#33000000"))
-                        }
-                    }
-                (row.getChildAt(1) as TextView).text = name
-                return row
+                b.colorName.text = name
+                b.checkMark.imageTintList = android.content.res.ColorStateList.valueOf(
+                    if (isLight) Color.parseColor("#1B1B20") else Color.WHITE
+                )
+                b.root.attachPressScale(0.9f, 80L)
+                b.root.setOnClickListener {
+                    sheet.dismiss()
+                    onSelect(hex)
+                }
             }
         }
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.font_color)
-            .setAdapter(adapter) { _, which -> onCommandColor(colors[which].first) }
-            .show()
+        sheet.show()
+    }
+
+    private fun pickColor() {
+        val colors = arrayOf(
+            Triple("#1B1B20", "曜石黑", false),
+            Triple("#616161", "沉稳灰", false),
+            Triple("#E53935", "醒目红", false),
+            Triple("#FB8C00", "活力橙", false),
+            Triple("#FDD835", "琥珀黄", true),
+            Triple("#43A047", "翡翠绿", false),
+            Triple("#1E88E5", "晴空蓝", false),
+            Triple("#8E24AA", "雅致紫", false),
+            Triple("#D81B60", "玫瑰红", false)
+        )
+        showColorPicker(R.string.pick_font_color, colors, onSelect = { hex ->
+            onCommandColor(hex)
+        }, onReset = {
+            exec("removeFormat", null)
+            toast(R.string.rich_clear)
+        })
+    }
+
+    private fun pickHighlight() {
+        val hlColors = arrayOf(
+            Triple("#FFF176", "柠檬黄", true),
+            Triple("#A5D6A7", "薄荷绿", true),
+            Triple("#FFCC80", "落日橙", true),
+            Triple("#81D4FA", "清爽蓝", true),
+            Triple("#CE93D8", "浅淡紫", true),
+            Triple("#F48FB1", "浪漫粉", true),
+            Triple("#B0BEC5", "冷雾灰", true)
+        )
+        showColorPicker(R.string.pick_highlight_color, hlColors, onSelect = { hex ->
+            exec("hiliteColor", hex)
+            toast(R.string.highlight_applied)
+        }, onReset = {
+            exec("hiliteColor", "transparent")
+            toast(R.string.highlight_cleared)
+        })
     }
 
     private fun onCommandColor(hex: String) {
@@ -836,7 +872,7 @@ class EditorActivity : AppCompatActivity() {
         fun onDirty() {
             runOnUiThread {
                 richDraftChanged = true
-                showSaveState(getString(R.string.unsaved), onSurfaceVariantColor, sticky = true)
+                showSaveState(getString(R.string.status_editing), onSurfaceVariantColor, sticky = true)
             }
         }
 
@@ -1228,7 +1264,7 @@ class EditorActivity : AppCompatActivity() {
             binding.edContent.doAfterTextChanged {
                 bodyLen = it?.length ?: 0
                 htmlDraftChanged = true
-                showSaveState(getString(R.string.unsaved), onSurfaceVariantColor, sticky = true)
+                showSaveState(getString(R.string.status_editing), onSurfaceVariantColor, sticky = true)
                 updateMeta()
             }
             binding.edContent.onHistoryChanged = { updateCodeUndoRedo() }

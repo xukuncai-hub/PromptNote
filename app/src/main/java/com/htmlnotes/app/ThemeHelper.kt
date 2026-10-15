@@ -34,6 +34,18 @@ object ThemeHelper {
         R.string.theme_color_forest
     )
 
+    /** 各主题对应的主色资源。 */
+    val primaryColors = intArrayOf(
+        R.color.theme_indigo_primary,
+        R.color.theme_teal_primary,
+        R.color.theme_coral_primary,
+        R.color.theme_orange_primary,
+        R.color.theme_rose_primary,
+        R.color.theme_violet_primary,
+        R.color.theme_sky_primary,
+        R.color.theme_forest_primary
+    )
+
     /** 当前选中的主题色索引（越界时回退到默认）。 */
     fun currentIndex(context: Context): Int {
         val idx = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)

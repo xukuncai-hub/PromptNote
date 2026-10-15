@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 便签长按操作底部浮层：置顶/编辑/分享/复制/删除 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="12dp"
+    android:paddingBottom="24dp">
+
+    <!-- 拖动手柄 -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/bg_handle" />
+
+    <!-- 便签头部摘要 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/menuNoteTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="serif"
+            android:maxLines="1"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:text="便签标题" />
+
+        <TextView
+            android:id="@+id/menuNoteSnippet"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp"
+            tools:text="便签内容摘要预览..." />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="8dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <!-- 1. 置顶 / 取消置顶 -->
+    <LinearLayout
+        android:id="@+id/actionPin"
+        style="@style/Widget.HtmlNotes.Sheet.Row">
+
+        <ImageView
+            android:id="@+id/actionPinIcon"
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_pin"
+            app:tint="?attr/colorPrimary" />
+
+        <TextView
+            android:id="@+id/actionPinText"
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/pin" />
+    </LinearLayout>
+
+    <!-- 2. 编辑便签 -->
+    <LinearLayout
+        android:id="@+id/actionEdit"
+        style="@style/Widget.HtmlNotes.Sheet.Row">
+
+        <ImageView
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_edit" />
+
+        <TextView
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/editor_edit_title" />
+    </LinearLayout>
+
+    <!-- 3. 分享内容 -->
+    <LinearLayout
+        android:id="@+id/actionShare"
+        style="@style/Widget.HtmlNotes.Sheet.Row">
+
+        <ImageView
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_share" />
+
+        <TextView
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/share" />
+    </LinearLayout>
+
+    <!-- 4. 复制内容 -->
+    <LinearLayout
+        android:id="@+id/actionCopy"
+        style="@style/Widget.HtmlNotes.Sheet.Row">
+
+        <ImageView
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_copy" />
+
+        <TextView
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/copy_code" />
+    </LinearLayout>
+
+    <!-- 5. 删除便签 -->
+    <LinearLayout
+        android:id="@+id/actionDelete"
+        style="@style/Widget.HtmlNotes.Sheet.Row">
+
+        <ImageView
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_delete"
+            app:tint="?attr/colorError" />
+
+        <TextView
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/delete"
+            android:textColor="?attr/colorError" />
+    </LinearLayout>
+
+</LinearLayout>

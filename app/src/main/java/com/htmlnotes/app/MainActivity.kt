@@ -1,10 +1,14 @@
 package com.htmlnotes.app
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -13,7 +17,9 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.htmlnotes.app.databinding.ActivityMainBinding
+import com.htmlnotes.app.databinding.SheetNoteActionsBinding
 import java.nio.charset.Charset
 
 /** 搜索框输入防抖窗口：连续输入时只跑最后一次过滤。 */
@@ -133,6 +139,18 @@ class MainActivity : AppCompatActivity() {
             imm.hideSoftInputFromWindow(binding.searchEdit.windowToken, 0)
             applyFilter()
         }
+        binding.filterGroup.setOnCheckedStateChangeListener { _, _ ->
+            applyFilter()
+        }
+        binding.btnClearFilter.setOnClickListener {
+            binding.searchEdit.text?.clear()
+            binding.chipAll.isChecked = true
+            binding.searchEdit.clearFocus()
+            binding.root.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.hideSoftInputFromWindow(binding.searchEdit.windowToken, 0)
+            applyFilter()
+        }
 
         // 新建按钮弹出动画（弹性放大）
         binding.fabNew.post {
@@ -240,17 +258,33 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyFilter() {
         val query = binding.searchEdit.text?.toString()?.trim().orEmpty()
+        val checkedChipId = binding.filterGroup.checkedChipId
+        val typeFiltered = when (checkedChipId) {
+            R.id.chipText -> allItems.filter { it.type == Project.TYPE_TEXT }
+            R.id.chipHtml -> allItems.filter { it.type == Project.TYPE_HTML }
+            R.id.chipPinned -> allItems.filter { it.pinned }
+            else -> allItems
+        }
         val filtered = if (query.isEmpty()) {
-            allItems
+            typeFiltered
         } else {
-            allItems.filter {
+            typeFiltered.filter {
                 it.title.contains(query, ignoreCase = true) ||
                     it.content.contains(query, ignoreCase = true)
             }
         }
         adapter.submit(filtered)
+
+        val isSearchingOrFiltering = query.isNotEmpty() || checkedChipId != R.id.chipAll
+        if (isSearchingOrFiltering && allItems.isNotEmpty()) {
+            binding.resultCountText.visibility = View.VISIBLE
+            binding.resultCountText.text = getString(R.string.search_result_count, filtered.size)
+        } else {
+            binding.resultCountText.visibility = View.GONE
+        }
+
         binding.emptyLayout.fadeVisibility(allItems.isEmpty() && loadedOnce)
-        binding.noResult.fadeVisibility(allItems.isNotEmpty() && filtered.isEmpty())
+        binding.noResultLayout.fadeVisibility(allItems.isNotEmpty() && filtered.isEmpty())
         // 内容被删到不足以滚动时列表会被拉回顶部，此时务必让 FAB 重新可见
         binding.recycler.post {
             if (!binding.recycler.canScrollVertically(-1)) setFabHidden(false)
@@ -323,24 +357,72 @@ class MainActivity : AppCompatActivity() {
         if (card == null) overridePendingTransition(R.anim.slide_in_right, R.anim.fade_out)
     }
 
-    /** 长按菜单：置顶 / 取消置顶、删除。 */
+    /** 长按菜单：以现代 Material 3 底部抽屉展示置顶/编辑/分享/复制/删除。 */
     private fun showNoteMenu(p: Project) {
-        val items = arrayOf(
-            getString(if (p.pinned) R.string.unpin else R.string.pin),
-            getString(R.string.delete)
-        )
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle(p.title)
-            .setItems(items) { _, which ->
-                when (which) {
-                    0 -> {
-                        store.togglePin(p.id)
-                        refresh()
-                    }
-                    1 -> confirmDelete(p)
-                }
-            }
-            .show()
+        val sheet = BottomSheetDialog(this)
+        val menuBinding = SheetNoteActionsBinding.inflate(layoutInflater)
+        sheet.setContentView(menuBinding.root)
+
+        menuBinding.menuNoteTitle.text = p.title
+        val snip = snippetOf(p.content)
+        menuBinding.menuNoteSnippet.text = if (snip.isBlank() || snip == BLANK_SNIPPET) {
+            getString(if (p.type == Project.TYPE_TEXT) R.string.text_note else R.string.html_note)
+        } else snip
+
+        if (p.pinned) {
+            menuBinding.actionPinText.setText(R.string.action_unpin_note)
+        } else {
+            menuBinding.actionPinText.setText(R.string.action_pin_note)
+        }
+
+        menuBinding.actionPin.setOnClickListener {
+            sheet.dismiss()
+            store.togglePin(p.id)
+            refresh()
+        }
+        menuBinding.actionEdit.setOnClickListener {
+            sheet.dismiss()
+            openEditor(p)
+        }
+        menuBinding.actionShare.setOnClickListener {
+            sheet.dismiss()
+            shareNote(p)
+        }
+        menuBinding.actionCopy.setOnClickListener {
+            sheet.dismiss()
+            copyNoteContent(p)
+        }
+        menuBinding.actionDelete.setOnClickListener {
+            sheet.dismiss()
+            confirmDelete(p)
+        }
+
+        listOf(
+            menuBinding.actionPin, menuBinding.actionEdit, menuBinding.actionShare,
+            menuBinding.actionCopy, menuBinding.actionDelete
+        ).forEach { it.attachPressScale(0.97f, 70L) }
+
+        sheet.show()
+    }
+
+    private fun shareNote(p: Project) {
+        val shareText = buildString {
+            append(p.title).append("\n\n")
+            append(if (p.type == Project.TYPE_HTML) p.content else snippetOf(p.content))
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, p.title)
+            putExtra(Intent.EXTRA_TEXT, shareText)
+        }
+        startActivity(Intent.createChooser(intent, getString(R.string.share)))
+    }
+
+    private fun copyNoteContent(p: Project) {
+        val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+        val textToCopy = if (p.type == Project.TYPE_HTML) p.content else snippetOf(p.content)
+        cm.setPrimaryClip(ClipData.newPlainText(p.title, textToCopy))
+        Toast.makeText(this, R.string.copy_note_success, Toast.LENGTH_SHORT).show()
     }
 
     private fun confirmDelete(p: Project) {

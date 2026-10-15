@@ -85,6 +85,12 @@ class PreviewActivity : AppCompatActivity() {
         binding.toolbar.inflateMenu(R.menu.menu_preview)
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
+                R.id.action_edit -> {
+                    startActivity(Intent(this, EditorActivity::class.java).apply {
+                        putExtra("id", id)
+                    })
+                    true
+                }
                 R.id.action_refresh -> {
                     retryLoad()
                     true
@@ -308,6 +314,17 @@ class PreviewActivity : AppCompatActivity() {
     private fun finishWithAnim() {
         finish()
         if (!containerTransition) overridePendingTransition(R.anim.fade_in, R.anim.slide_out_right)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val id = intent.getStringExtra("id")
+        val p = id?.let { ProjectStore(this).get(it) }
+        if (p != null && (p.content != currentContent || p.title != binding.toolbar.title.toString())) {
+            currentContent = p.content
+            binding.toolbar.title = p.title
+            retryLoad()
+        }
     }
 
     override fun onDestroy() {

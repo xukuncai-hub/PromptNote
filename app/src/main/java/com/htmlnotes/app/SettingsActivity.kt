@@ -79,22 +79,60 @@ class SettingsActivity : AppCompatActivity() {
         binding.viewValue.text =
             getString(if (prefs.getBoolean("grid", true)) R.string.view_grid else R.string.view_list)
 
-        val noteCount = ProjectStore(this).list().size
-        binding.notesCountValue.text = "${noteCount}篇"
+        val store = ProjectStore(this)
+        val allNotes = store.list()
+        val totalCount = allNotes.size
+        val textCount = allNotes.count { it.type == Project.TYPE_TEXT }
+        val htmlCount = allNotes.count { it.type == Project.TYPE_HTML }
+        val pinnedCount = allNotes.count { it.pinned }
+        binding.notesCountValue.text = "${totalCount}篇 (${textCount}文本 · ${htmlCount}HTML · ${pinnedCount}置顶)"
+
+        val bytes = store.storageSize()
+        binding.storageSizeValue.text = formatStorageSize(bytes)
     }
 
-    /** 主题色选择：选中后保存并立即重建生效。 */
+    private fun formatStorageSize(bytes: Long): String {
+        return when {
+            bytes < 1024 -> "${bytes} B"
+            bytes < 1024 * 1024 -> String.format(java.util.Locale.getDefault(), "%.1f KB", bytes / 1024.0)
+            else -> String.format(java.util.Locale.getDefault(), "%.1f MB", bytes / (1024.0 * 1024.0))
+        }
+    }
+
+    /** 主题色选择：以精美色彩网格底部弹窗展示，点击即时切换生效。 */
     private fun showThemeColorChooser() {
-        val names = ThemeHelper.colorNames.map { getString(it) }.toTypedArray()
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val sheetBinding = com.htmlnotes.app.databinding.SheetThemeColorBinding.inflate(layoutInflater)
+        sheet.setContentView(sheetBinding.root)
+
         val current = ThemeHelper.currentIndex(this)
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.settings_theme_color)
-            .setSingleChoiceItems(names, current) { dialog, which ->
-                prefs.edit().putInt("theme_color", which).apply()
-                dialog.dismiss()
-                recreate()
+        sheetBinding.colorRecycler.layoutManager = androidx.recyclerview.widget.GridLayoutManager(this, 4)
+        sheetBinding.colorRecycler.adapter = object : androidx.recyclerview.widget.RecyclerView.Adapter<androidx.recyclerview.widget.RecyclerView.ViewHolder>() {
+            override fun getItemCount() = ThemeHelper.overlayStyles.size
+            override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): androidx.recyclerview.widget.RecyclerView.ViewHolder {
+                val itemBinding = com.htmlnotes.app.databinding.ItemThemeColorBinding.inflate(layoutInflater, parent, false)
+                return object : androidx.recyclerview.widget.RecyclerView.ViewHolder(itemBinding.root) {}
             }
-            .show()
+            override fun onBindViewHolder(holder: androidx.recyclerview.widget.RecyclerView.ViewHolder, position: Int) {
+                val b = com.htmlnotes.app.databinding.ItemThemeColorBinding.bind(holder.itemView)
+                val colorVal = androidx.core.content.ContextCompat.getColor(this@SettingsActivity, ThemeHelper.primaryColors[position])
+                (b.colorCircle.background as? android.graphics.drawable.GradientDrawable)?.setColor(colorVal) ?: run {
+                    b.colorCircle.background = android.graphics.drawable.GradientDrawable().apply {
+                        shape = android.graphics.drawable.GradientDrawable.OVAL
+                        setColor(colorVal)
+                    }
+                }
+                b.colorName.text = getString(ThemeHelper.colorNames[position])
+                b.checkMark.visibility = if (position == current) android.view.View.VISIBLE else android.view.View.GONE
+                b.root.attachPressScale(0.92f, 80L)
+                b.root.setOnClickListener {
+                    sheet.dismiss()
+                    prefs.edit().putInt("theme_color", position).apply()
+                    recreate()
+                }
+            }
+        }
+        sheet.show()
     }
 
     private fun showThemeChooser() {

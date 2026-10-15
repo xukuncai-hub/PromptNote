@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 待办清单图标：复选框勾选与列表条目 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 方框 -->
+    <path
+        android:pathData="M3,5.5 C3,4.12 4.12,3 5.5,3 L10.5,3 C11.88,3 13,4.12 13,5.5 L13,10.5 C13,11.88 11.88,13 10.5,13 L5.5,13 C4.12,13 3,11.88 3,10.5 Z"
+        android:strokeColor="#FF1B1B20"
+        android:strokeWidth="1.6"
+        android:fillColor="#00000000" />
+    <!-- 对勾 -->
+    <path
+        android:pathData="M5.5,8 L7.5,10 L11,5"
+        android:strokeColor="#FF1B1B20"
+        android:strokeWidth="1.7"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <!-- 列表行 -->
+    <path
+        android:pathData="M16,6 L21,6 M16,10 L21,10 M5,17 L21,17 M5,20.5 L17,20.5"
+        android:strokeColor="#FF1B1B20"
+        android:strokeWidth="1.6"
+        android:strokeLineCap="round" />
+</vector>

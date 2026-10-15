@@ -21,8 +21,43 @@ class ProjectAdapter(
 
     enum class Action { OPEN, EDIT, DELETE, PIN }
 
-    /** 复用同一个格式化器：原先每次 onBindViewHolder 都 new 一个 SimpleDateFormat，开销不小 */
     private val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+    private val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    private val yearFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+
+    private fun formatSmartTime(timestamp: Long): String {
+        val now = System.currentTimeMillis()
+        val diff = (now - timestamp).coerceAtLeast(0L)
+        val oneMinute = 60_000L
+        val oneHour = 60 * oneMinute
+        val oneDay = 24 * oneHour
+
+        return when {
+            diff < oneMinute -> "刚刚"
+            diff < oneHour -> "${diff / oneMinute}分钟前"
+            diff < oneDay -> {
+                val calNow = java.util.Calendar.getInstance().apply { timeInMillis = now }
+                val calThen = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
+                if (calNow.get(java.util.Calendar.DAY_OF_YEAR) == calThen.get(java.util.Calendar.DAY_OF_YEAR)) {
+                    "今天 " + timeFormat.format(Date(timestamp))
+                } else {
+                    "昨天 " + timeFormat.format(Date(timestamp))
+                }
+            }
+            diff < 2 * oneDay -> {
+                "昨天 " + timeFormat.format(Date(timestamp))
+            }
+            else -> {
+                val calNow = java.util.Calendar.getInstance().apply { timeInMillis = now }
+                val calThen = java.util.Calendar.getInstance().apply { timeInMillis = timestamp }
+                if (calNow.get(java.util.Calendar.YEAR) == calThen.get(java.util.Calendar.YEAR)) {
+                    dateFormat.format(Date(timestamp))
+                } else {
+                    yearFormat.format(Date(timestamp))
+                }
+            }
+        }
+    }
 
     inner class VH(val binding: ItemProjectBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -40,13 +75,13 @@ class ProjectAdapter(
         b.root.setCardBackgroundColor(
             ContextCompat.getColor(context, colorIds[p.colorIndex % colorIds.size])
         )
-        b.pinIcon.visibility = if (p.pinned) View.VISIBLE else View.GONE
+        b.pinBadge.visibility = if (p.pinned) View.VISIBLE else View.GONE
         val snippet = snippetOf(p.content)
         // 标题：用户自定义过（非默认占位）时用用户标题；否则从 HTML 提取 <title>/<h1>/<h2>，
         // 提取不到再显示「无标题笔记」——`<!DOCTYPE` 这类源码永远不会出现在界面上
         b.title.text = displayTitle(p, context)
         b.snippet.text = snippet
-        b.date.text = dateFormat.format(Date(p.updatedAt))
+        b.date.text = formatSmartTime(p.updatedAt)
 
         // 笔记类型徽章
         b.typeTag.text = context.getString(

@@ -135,7 +135,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- 便签数量统计 -->
+                    <!-- 便签统计 -->
                     <LinearLayout style="@style/Widget.HtmlNotes.Settings.RowBase">
 
                         <ImageView
@@ -144,10 +144,28 @@
 
                         <TextView
                             style="@style/Widget.HtmlNotes.Settings.Title"
-                            android:text="@string/empty_title" />
+                            android:text="@string/stats_notes" />
 
                         <TextView
                             android:id="@+id/notesCountValue"
+                            style="@style/Widget.HtmlNotes.Settings.Value" />
+                    </LinearLayout>
+
+                    <View style="@style/Widget.HtmlNotes.Settings.Divider" />
+
+                    <!-- 存储占用 -->
+                    <LinearLayout style="@style/Widget.HtmlNotes.Settings.RowBase">
+
+                        <ImageView
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_code" />
+
+                        <TextView
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/stats_storage" />
+
+                        <TextView
+                            android:id="@+id/storageSizeValue"
                             style="@style/Widget.HtmlNotes.Settings.Value" />
                     </LinearLayout>
 
