@@ -66,6 +66,8 @@ class ProjectAdapter(
 
     override fun getItemCount() = items.size
 
+    fun getItem(position: Int): Project? = items.getOrNull(position)
+
     override fun onBindViewHolder(holder: VH, position: Int) {
         val p = items[position]
         val b = holder.binding
@@ -80,6 +82,7 @@ class ProjectAdapter(
         // 标题：用户自定义过（非默认占位）时用用户标题；否则从 HTML 提取 <title>/<h1>/<h2>，
         // 提取不到再显示「无标题笔记」——`<!DOCTYPE` 这类源码永远不会出现在界面上
         b.title.text = displayTitle(p, context)
+        b.snippet.maxLines = if (p.pinned) 4 else 3
         b.snippet.text = snippet
         b.date.text = formatSmartTime(p.updatedAt)
 

@@ -104,7 +104,16 @@ class MainActivity : AppCompatActivity() {
                 ProjectAdapter.Action.PIN -> showNoteMenu(project)
             }
         }
-        binding.recycler.layoutManager = GridLayoutManager(this, if (isGrid) 2 else 1)
+        val gridLayoutManager = GridLayoutManager(this, if (isGrid) 2 else 1).apply {
+            spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int {
+                    if (!isGrid) return 1
+                    val item = adapter.getItem(position) ?: return 1
+                    return if (item.pinned) 2 else 1
+                }
+            }
+        }
+        binding.recycler.layoutManager = gridLayoutManager
         binding.recycler.adapter = adapter
         // 条目增删/移动的过渡时长略放长，配合 DiffUtil 的增量更新更顺滑
         binding.recycler.itemAnimator = DefaultItemAnimator().apply {
@@ -314,6 +323,7 @@ class MainActivity : AppCompatActivity() {
         isGrid = !isGrid
         getSharedPreferences("prefs", MODE_PRIVATE).edit().putBoolean("grid", isGrid).apply()
         (binding.recycler.layoutManager as GridLayoutManager).spanCount = if (isGrid) 2 else 1
+        adapter.notifyItemRangeChanged(0, adapter.itemCount)
         binding.recycler.scheduleLayoutAnimation()
         updateToggleIcon()
     }

@@ -240,5 +240,7 @@
     <string name="toast_image_moved">图片位置已调整</string>
     <string name="toast_image_replaced">已更新图片</string>
     <string name="toast_image_deleted">已删除图片</string>
+    <string name="toast_callout_inserted">已插入重点提示卡片</string>
+    <string name="toast_code_card_inserted">已插入极客代码卡片</string>
     <string name="action_close">关闭</string>
 </resources>

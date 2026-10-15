@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceError
@@ -54,6 +55,19 @@ class PreviewActivity : AppCompatActivity() {
                     getString(R.string.preview_script_failed) + "\n" + detail,
                     Toast.LENGTH_LONG
                 ).show()
+            }
+        }
+
+        /** 极客代码卡片一键复制代码并震动反馈 (21st.dev / Magic UI) */
+        @JavascriptInterface
+        fun onCopyCode(code: String) {
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText(getString(R.string.app_name), code)
+                clipboard.setPrimaryClip(clip)
+                binding.webView.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                Toast.makeText(this@PreviewActivity, R.string.sb_copied, Toast.LENGTH_SHORT).show()
             }
         }
     }

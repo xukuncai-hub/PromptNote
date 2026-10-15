@@ -392,6 +392,12 @@ class EditorActivity : AppCompatActivity() {
         binding.btnUl.setOnClickListener { exec("insertUnorderedList", null) }
         binding.btnOl.setOnClickListener { exec("insertOrderedList", null) }
         binding.btnQuote.setOnClickListener { exec("formatBlock", "<blockquote>") }
+        binding.btnQuote.setOnLongClickListener {
+            val calloutHtml = "<div class=\"callout callout-tip\"><span class=\"callout-icon\">💡</span><div class=\"callout-content\"><p><strong>重点提示：</strong>在此输入提示内容…</p></div></div><p><br></p>"
+            exec("insertHTML", calloutHtml)
+            toast(R.string.toast_callout_inserted)
+            true
+        }
 
         binding.btnAlignL.setOnClickListener { exec("justifyLeft", null) }
         binding.btnAlignC.setOnClickListener { exec("justifyCenter", null) }
@@ -409,6 +415,12 @@ class EditorActivity : AppCompatActivity() {
             true
         }
         binding.btnCode.setOnClickListener { exec("inlineCode", null) }
+        binding.btnCode.setOnLongClickListener {
+            val codeHtml = "<pre><div class=\"btn-copy-code\">复制</div><code>// 21st.dev 极客代码卡片\nfunction helloWorld() {\n    console.log(\"Hello PromptNote!\");\n}</code></pre><p><br></p>"
+            exec("insertHTML", codeHtml)
+            toast(R.string.toast_code_card_inserted)
+            true
+        }
         binding.btnHr.setOnClickListener { exec("insertHorizontalRule", null); toast(R.string.toast_hr) }
         binding.btnOutdent.setOnClickListener { exec("outdent", null) }
         binding.btnIndent.setOnClickListener { exec("indent", null) }
@@ -803,10 +815,22 @@ class EditorActivity : AppCompatActivity() {
                         "if(Math.abs(dy)>12){HtmlNotes.onScrollDirection(dy>0);}" +
                         "refreshState();" +
                         "},true);" +
-                        // 点击事件：精准区分复选框、图片与正文聚焦（滑动与惯性制动绝对不误触发）
+                        // 点击事件：精准区分复选框、复制代码卡片、图片与正文聚焦（滑动与惯性制动绝对不误触发）
                         "document.addEventListener('click',function(e){" +
                         "if(_isScrolling||_isDragging||(Date.now()-_lastScrollTime<350)||(Date.now()-_lastDragEndTime<400)){return;}" +
                         "var t=e.target;" +
+                        "if(t&&t.classList.contains('btn-copy-code')){" +
+                        "e.preventDefault();e.stopPropagation();" +
+                        "var pre=t.closest('pre');" +
+                        "if(pre){" +
+                        "var clone=pre.cloneNode(true);" +
+                        "var b=clone.querySelector('.btn-copy-code');if(b)b.remove();" +
+                        "HtmlNotes.onCopyCode(clone.textContent.trim());" +
+                        "t.innerText='已复制 ✓';" +
+                        "setTimeout(function(){t.innerText='复制';},1800);" +
+                        "}" +
+                        "return;" +
+                        "}" +
                         "if(t&&t.tagName==='INPUT'&&t.type==='checkbox'){" +
                         "if(t.checked){t.setAttribute('checked','checked');}else{t.removeAttribute('checked');}" +
                         "refreshState();HtmlNotes.onDirty();HtmlNotes.onHapticTick();return;" +
@@ -1369,6 +1393,18 @@ class EditorActivity : AppCompatActivity() {
                         "s.parentNode.replaceChild(c,s);});",
                     null
                 )
+            }
+        }
+
+        /** 极客代码卡片一键复制代码并震动反馈 (21st.dev / Magic UI) */
+        @JavascriptInterface
+        fun onCopyCode(code: String) {
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                cm.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), code))
+                binding.richWeb.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                toast(R.string.sb_copied)
             }
         }
     }

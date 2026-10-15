@@ -74,9 +74,15 @@ object NoteHtml {
             // 空段落防塌陷与正文行距
             "#ed p:empty::before{content:'\\200B';}" +
             "#ed p{margin:8px 0;min-height:1.6em;line-height:1.72;}" +
-            // ColorOS 标志性圆角引用块
-            "#ed blockquote{margin:12px 0;padding:10px 14px;border-left:3.5px solid ${p.accent};" +
-            "color:${p.sub};background:${p.quoteBg};border-radius:8px;font-style:normal;}" +
+            // ColorOS 16 + 21st.dev 现代化圆角引用块与 Callout 信息卡片
+            "#ed blockquote{margin:12px 0;padding:12px 16px;border-left:4px solid ${p.accent};" +
+            "color:${p.sub};background:${p.quoteBg};border-radius:12px;font-style:normal;box-shadow:inset 0 0 0 0.5px rgba(0,0,0,0.05);}" +
+            "#ed .callout{margin:14px 0;padding:12px 16px;border-radius:12px;display:flex;align-items:flex-start;gap:10px;line-height:1.65;font-size:15px;box-shadow:0 2px 8px rgba(0,0,0,0.04);}" +
+            "#ed .callout-tip{border-left:4px solid #10B981;background:rgba(16,185,129,0.09);color:inherit;}" +
+            "#ed .callout-info{border-left:4px solid ${p.accent};background:${p.quoteBg};color:inherit;}" +
+            "#ed .callout-warning{border-left:4px solid #F59E0B;background:rgba(245,158,11,0.09);color:inherit;}" +
+            "#ed .callout-icon{font-size:17px;line-height:1.4;flex-shrink:0;user-select:none;}" +
+            "#ed .callout-content{flex:1;min-width:0;outline:none;}" +
             "#ed ul,#ed ol{padding-left:1.6em;margin:8px 0;}" +
             "#ed li{margin:4px 0;line-height:1.65;}" +
             "#ed a{color:${p.accent};text-decoration:underline;text-underline-offset:2px;}" +
@@ -100,19 +106,26 @@ object NoteHtml {
             ".img-drop-indicator{height:4px;background:${p.accent};border-radius:2px;margin:10px 0;box-shadow:0 0 10px ${p.accent};pointer-events:none;animation:pulseDropLine 1.2s infinite ease-in-out;}" +
             "@keyframes pulseDropLine{0%,100%{opacity:0.75;transform:scaleY(1);}50%{opacity:1;transform:scaleY(1.4);}}" +
             "#ed .note-img-container{text-align:center;margin:12px 0;}" +
-            "#ed pre{white-space:pre-wrap;word-break:break-word;margin:12px 0;background:${p.quoteBg};padding:12px 14px;border-radius:8px;}" +
+            // 21st.dev 极客代码卡片（暗色背景、终端三色圆点、一键复制交互按钮）
+            "#ed pre{position:relative;white-space:pre-wrap;word-break:break-word;margin:14px 0;background:#18181B;color:#F4F4F5;padding:36px 16px 14px;border-radius:12px;font-family:Menlo,Consolas,monospace;font-size:13.5px;line-height:1.62;border:0.8px solid rgba(255,255,255,0.12);box-shadow:0 4px 16px rgba(0,0,0,0.14);}" +
+            "#ed pre::before{content:'● ● ●';position:absolute;top:10px;left:14px;font-size:9.5px;letter-spacing:3px;color:rgba(255,255,255,0.3);user-select:none;}" +
+            "#ed pre .btn-copy-code{position:absolute;top:7px;right:10px;padding:3px 9px;font-size:11.5px;font-family:-apple-system,sans-serif;color:rgba(255,255,255,0.78);background:rgba(255,255,255,0.12);border-radius:6px;cursor:pointer;user-select:none;transition:all 0.18s ease;}" +
+            "#ed pre .btn-copy-code:active{transform:scale(0.92);background:rgba(255,255,255,0.22);}" +
             // ColorOS 风格表格 (0.66px 细边框 + 圆角)
             "#ed table{width:100%;border-collapse:separate;border-spacing:0;margin:12px 0;font-size:14px;border:0.66px solid rgba(0,0,0,0.12);border-radius:6px;overflow:hidden;}" +
             "#ed th,#ed td{border:0.66px solid rgba(0,0,0,0.1);padding:8px 12px;text-align:left;}" +
             "#ed th{background:${p.quoteBg};font-weight:600;}" +
-            // ColorOS 16 官方待办复选框交互、顶端对齐与穿透删除线
+            // ColorOS 16 + 21st.dev 水生果冻弹性复选框与穿透删除线动画
             "#ed .task-item,#ed p:has(> input[type='checkbox']),#ed div:has(> input[type='checkbox']){" +
             "display:flex;align-items:flex-start;margin:6px 0;min-height:28px;list-style:none;}" +
             "#ed input[type='checkbox']{position:relative;margin:3.5px 10px 0 0;width:18px;height:18px;border-radius:5px;" +
-            "accent-color:${p.accent};cursor:pointer;flex-shrink:0;vertical-align:middle;}" +
+            "accent-color:${p.accent};cursor:pointer;flex-shrink:0;vertical-align:middle;transition:transform 0.18s cubic-bezier(0.34,1.56,0.64,1);}" +
             "#ed input[type='checkbox']::after{content:'';position:absolute;top:-8px;left:-8px;right:-8px;bottom:-8px;}" +
+            "#ed input[type='checkbox']:active{transform:scale(0.85);}" +
+            "#ed input[type='checkbox']:checked{animation:jellyBounce 0.32s cubic-bezier(0.34,1.56,0.64,1);}" +
+            "@keyframes jellyBounce{0%{transform:scale(0.85);}50%{transform:scale(1.22);}100%{transform:scale(1);}}" +
             "#ed .task-item > span,#ed .task-item > div{flex:1;min-width:0;word-break:break-word;line-height:1.72;}" +
-            "#ed input[type='checkbox']:checked ~ *{text-decoration:line-through;opacity:0.48;transition:opacity 0.18s ease;}" +
+            "#ed input[type='checkbox']:checked ~ *{text-decoration:line-through;opacity:0.42;transition:opacity 0.22s ease,text-decoration 0.22s ease;}" +
             // ColorOS 官方 4 色荧光马克笔高亮体系
             "#ed mark{background:#FFE22766;color:inherit;padding:1px 4px;border-radius:3px;}" +
             "#ed mark.hl-yellow{background:#FFE22766;}" +
@@ -140,8 +153,32 @@ object NoteHtml {
             "<div id=\"ed\" contenteditable=\"true\"></div></body></html>"
 
     /** 预览整页：富文本片段（innerHTML）套入只读 #ed。 */
-    fun richPreviewPage(fragment: String, p: Palette): String =
-        head(p) + "<div id=\"ed\">$fragment</div></body></html>"
+    fun richPreviewPage(fragment: String, p: Palette): String {
+        val previewScript =
+            "<script>(function(){" +
+                "document.addEventListener('click',function(e){" +
+                "var t=e.target;" +
+                "if(t&&t.classList.contains('btn-copy-code')){" +
+                "e.preventDefault();e.stopPropagation();" +
+                "var pre=t.closest('pre');" +
+                "if(pre){" +
+                "var clone=pre.cloneNode(true);" +
+                "var b=clone.querySelector('.btn-copy-code');if(b)b.remove();" +
+                "if(window.HtmlNotePreview&&window.HtmlNotePreview.onCopyCode){" +
+                "window.HtmlNotePreview.onCopyCode(clone.textContent.trim());" +
+                "}" +
+                "t.innerText='已复制 ✓';" +
+                "setTimeout(function(){t.innerText='复制';},1800);" +
+                "}" +
+                "return;" +
+                "}" +
+                "if(t&&t.tagName==='INPUT'&&t.type==='checkbox'){" +
+                "if(t.checked){t.setAttribute('checked','checked');}else{t.removeAttribute('checked');}" +
+                "}" +
+                "},true);" +
+                "})();</script>"
+        return head(p) + "<div id=\"ed\">$fragment</div>$previewScript</body></html>"
+    }
 
     /** 预览整页：旧版纯文本转义后按 pre 保留换行。 */
     fun plainPreviewPage(text: String, p: Palette): String =
