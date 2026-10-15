@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.htmlnotes.app.databinding.ActivityMainBinding
 import com.htmlnotes.app.databinding.SheetNoteActionsBinding
+import com.htmlnotes.app.databinding.SheetTypeChooserBinding
 import java.nio.charset.Charset
 
 /** 搜索框输入防抖窗口：连续输入时只跑最后一次过滤。 */
@@ -339,16 +340,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showTypeChooser() {
-        val options = arrayOf(getString(R.string.text_note), getString(R.string.html_note))
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.choose_type_title)
-            .setItems(options) { _, which ->
-                openEditor(
-                    null,
-                    if (which == 0) Project.TYPE_TEXT else Project.TYPE_HTML
-                )
-            }
-            .show()
+        val sheet = BottomSheetDialog(this)
+        val sheetBinding = SheetTypeChooserBinding.inflate(layoutInflater)
+        sheet.setContentView(sheetBinding.root)
+
+        sheetBinding.cardTypeText.setOnClickListener {
+            sheet.dismiss()
+            openEditor(null, Project.TYPE_TEXT)
+        }
+        sheetBinding.cardTypeHtml.setOnClickListener {
+            sheet.dismiss()
+            openEditor(null, Project.TYPE_HTML)
+        }
+
+        listOf(sheetBinding.cardTypeText, sheetBinding.cardTypeHtml).forEach {
+            it.applyColorOsPressAnim(0.96f)
+        }
+
+        sheet.show()
     }
 
     private fun openEditor(p: Project?, type: String = Project.TYPE_HTML, card: android.view.View? = null) {

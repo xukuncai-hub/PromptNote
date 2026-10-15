@@ -30,6 +30,24 @@ object CouiMotion {
 }
 
 /**
+ * Google Material 3 Expressive 官方动效物理体系：
+ * 提取自 m3-expressive-design-skill tokens 规范 (May 2025)。
+ */
+object M3ExpressiveMotion {
+    /** M3 Expressive Fast Spatial 弹簧曲线: Damping 0.6, Stiffness 800 (带 1.67x overshoot 弹性回弹) */
+    val FAST_SPATIAL_INTERPOLATOR: Interpolator = PathInterpolatorCompat.create(0.42f, 1.67f, 0.21f, 0.90f)
+
+    /** M3 Expressive Default Spatial: Damping 0.8, Stiffness 380 (用于卡片、弹窗与抽屉) */
+    val DEFAULT_SPATIAL_INTERPOLATOR: Interpolator = PathInterpolatorCompat.create(0.38f, 1.21f, 0.22f, 1.00f)
+
+    /** M3 Expressive Fast Effects: Damping 1.0, Stiffness 3800 (色彩与透明度变换，无过冲) */
+    val FAST_EFFECTS_INTERPOLATOR: Interpolator = PathInterpolatorCompat.create(0.31f, 0.94f, 0.34f, 1.00f)
+
+    /** M3 Expressive Slow Spatial: Damping 0.8, Stiffness 200 (全屏展开/转场) */
+    val SLOW_SPATIAL_INTERPOLATOR: Interpolator = PathInterpolatorCompat.create(0.39f, 1.29f, 0.35f, 0.98f)
+}
+
+/**
  * ColorOS 标志性卡片/按键触控微动效 (PressAnimView)：
  * - 按下时轻微压缩至 0.96f，伴随清脆微触感 (Haptic)
  * - 抬起/移出时弹性回弹至 1.0f

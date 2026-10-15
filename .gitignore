@@ -10,3 +10,5 @@ app/build
 .externalNativeBuild
 .cxx
 build.log
+.agents/skills/m3-expressive/visuals/*
+!.agents/skills/m3-expressive/visuals/INDEX.tsv
