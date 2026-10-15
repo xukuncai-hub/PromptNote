@@ -1536,7 +1536,12 @@ class EditorActivity : AppCompatActivity() {
             .setTitle(R.string.delete_title)
             .setMessage(getString(R.string.delete_message, binding.edTitle.text.ifBlank { defaultTitle() }))
             .setPositiveButton(R.string.delete) { _, _ ->
-                projectId?.let { store.delete(it) }
+                saving = true
+                richDraftChanged = false
+                htmlDraftChanged = false
+                val id = projectId
+                projectId = null
+                id?.let { store.delete(it) }
                 finish()
             }
             .setNegativeButton(R.string.cancel, null)

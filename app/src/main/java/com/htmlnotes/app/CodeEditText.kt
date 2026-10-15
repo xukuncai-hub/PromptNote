@@ -261,7 +261,12 @@ class CodeEditText @JvmOverloads constructor(
             // 主题相关取值放在循环外：原先逐行调用 isNight() 与 Color.parseColor()，
             // 对长文件来说这是每帧数百次字符串解析，滚动时会明显掉帧。
             val activeLineColor = if (isNight()) LINE_NUMBER_ACTIVE_NIGHT else LINE_NUMBER_ACTIVE_LIGHT
-            for (line in 0 until lineCount) {
+            // 视口剪裁优化：仅计算并绘制屏幕可视区域内的行号（从 firstLine 到 lastLine），
+            // 避免长文档（如千行 HTML 代码）每帧全量绘制导致严重卡顿。
+            val firstLine = layout.getLineForVertical(sy.toInt().coerceAtLeast(0)).coerceIn(0, (lineCount - 1).coerceAtLeast(0))
+            val lastLine = layout.getLineForVertical((sy + height - paddingBottom).toInt()).coerceIn(firstLine, (lineCount - 1).coerceAtLeast(0))
+
+            for (line in firstLine..lastLine) {
                 val baseline = layout.getLineBaseline(line) + paddingTop
                 linePaint.color = if (line == curLine) activeLineColor else LINE_NUMBER_COLOR
                 // 行号左对齐钉在 gutter 内：x = scrollX + 左 padding（drawText 的 x 是文字左边缘）

@@ -135,6 +135,7 @@ class SettingsActivity : AppCompatActivity() {
             .setPositiveButton(R.string.delete) { _, _ ->
                 ProjectStore(this).clearAll()
                 Toast.makeText(this, R.string.settings_cleared, Toast.LENGTH_SHORT).show()
+                refreshValues()
             }
             .setNegativeButton(R.string.cancel, null)
             .show()

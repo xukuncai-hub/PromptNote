@@ -76,9 +76,15 @@ class EditorTip(private val host: View, private val bottomLimit: () -> Int) {
     }
 
     private fun hide() {
-        if (popup.isShowing) popup.dismiss()
+        if (!popup.isShowing) return
         text.animate().cancel()
-        text.alpha = 0f
+        text.animate().alpha(0f).setDuration(160).withEndAction {
+            try {
+                if (popup.isShowing) popup.dismiss()
+            } catch (e: Exception) {
+                // ignore if activity destroyed
+            }
+        }.start()
     }
 
     /** Activity 销毁时调：撤掉延迟任务，否则它会跑到销毁之后去弹窗口。 */
