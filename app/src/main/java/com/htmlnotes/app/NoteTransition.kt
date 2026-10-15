@@ -4,24 +4,21 @@ import android.animation.Animator
 import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Outline
 import android.graphics.Rect
 import android.transition.Fade
 import android.transition.Transition
 import android.transition.TransitionValues
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewOutlineProvider
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 
 /**
- * Material 容器变换过渡：首页卡片被点击后，目标页面（预览/编辑器）从卡片
- * 矩形「展开」为整页，返回时淡出。源页面只需把卡片屏幕坐标随 Intent 传出，
- * 目标页在 setContentView 前调 applyEnter() 装换 enter/exit transition。
+ * 首页卡片 → 目标页面（预览/编辑器）的进入过渡：把起始卡片的位置作为锚点，
+ * 整页等比放大 + 淡入，视觉上从被点的那张卡片「长出来」。返回时淡出。
  *
- * material 1.6 起 MaterialContainerTransform 迁移到了 androidx.transition，
- * 无法赋给 window.enterTransition（平台 android.transition 类型），跨 Activity
- * 场景改用下面的自绘平台 Transition 实现同样的 morph 效果。
+ * 这里刻意不做 Material 那种把卡片矩形拉伸成全屏的容器变换：
+ * 卡片与屏幕的宽高比相差很大，按两个方向分别缩放会把整页文字和图标压扁变形，
+ * 观感很差；等比缩放没有形变，同时仍然保留「从卡片展开」的方向感。
  *
  * 走过渡的路径必须跳过 overridePendingTransition——窗口动画与 activity
  * transition 同时生效会互相拉扯。
@@ -29,6 +26,12 @@ import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 object NoteTransition {
 
     private const val EXTRA_START_BOUNDS = "startBounds"
+
+    /** 过渡时长：足够看清是从卡片展开的，又不至于让人等。 */
+    private const val DURATION = 240L
+
+    /** 起始缩放比例：留一点点放大空间，同时把画面位移控制在无感范围内。 */
+    private const val MIN_SCALE = 0.94f
 
     /** 源页面：记录卡片在屏幕上的矩形（IntArray 传递，免 Parcelable 兼容问题）。 */
     fun putStartBounds(intent: Intent, card: View) {
@@ -41,24 +44,23 @@ object NoteTransition {
     }
 
     /**
-     * 目标页面（setContentView 之前调用）：若由卡片启动则启用容器变换进入 +
+     * 目标页面（setContentView 之前调用）：若由卡片启动则启用卡片锚点的进入 +
      * 淡出退出，返回 true；调用方据此跳过 overridePendingTransition。
      */
     fun applyEnter(activity: Activity): Boolean {
         val bounds = activity.intent.getIntArrayExtra(EXTRA_START_BOUNDS) ?: return false
-        activity.window.enterTransition = ContainerMorphTransition(
+        activity.window.enterTransition = CardOriginEnterTransition(
             Rect(bounds[0], bounds[1], bounds[2], bounds[3])
         )
-        activity.window.exitTransition = Fade().apply { duration = 200 }
+        activity.window.exitTransition = Fade().apply { duration = 180 }
         return true
     }
 
     /**
-     * 平台 Transition：把 android.R.id.content 以左上角为锚点，从起始矩形
-     * 非等比缩放 + 平移到全屏并淡入，圆角从卡片半径渐变回直角，
-     * 模拟 MaterialContainerTransform 的 morph 效果。
+     * 平台 Transition：以卡片中心为锚点，把 android.R.id.content 等比放大 +
+     * 淡入到最终位置。等比缩放保证过渡中内容不形变。
      */
-    private class ContainerMorphTransition(private val start: Rect) : Transition() {
+    private class CardOriginEnterTransition(private val start: Rect) : Transition() {
 
         override fun captureStartValues(transitionValues: TransitionValues) = Unit
         override fun captureEndValues(transitionValues: TransitionValues) = Unit
@@ -73,30 +75,22 @@ object NoteTransition {
             val h = content.height.toFloat()
             if (w <= 0f || h <= 0f) return null
 
-            val startRadius = 20f * content.resources.displayMetrics.density
-            var radius = startRadius
-            content.pivotX = 0f
-            content.pivotY = 0f
-            content.outlineProvider = object : ViewOutlineProvider() {
-                override fun getOutline(view: View, outline: Outline) {
-                    outline.setRoundRect(0, 0, view.width, view.height, radius)
-                }
-            }
-            content.clipToOutline = true
+            // 卡片屏幕坐标换算到 content 自身坐标系：content 不一定与屏幕左上角重合
+            val loc = IntArray(2)
+            content.getLocationOnScreen(loc)
+            content.pivotX = (start.centerX() - loc[0]).toFloat().coerceIn(0f, w)
+            content.pivotY = (start.centerY() - loc[1]).toFloat().coerceIn(0f, h)
 
             return ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = 350
+                duration = DURATION
                 interpolator = FastOutSlowInInterpolator()
                 addUpdateListener { a ->
                     val f = a.animatedValue as Float
-                    content.scaleX = lerp(start.width() / w, 1f, f)
-                    content.scaleY = lerp(start.height() / h, 1f, f)
-                    content.translationX = lerp(start.left.toFloat(), 0f, f)
-                    content.translationY = lerp(start.top.toFloat(), 0f, f)
-                    // 前 40% 时长内淡入（Material fadeMode=IN 的近似）
-                    content.alpha = (f / 0.4f).coerceAtMost(1f)
-                    radius = lerp(startRadius, 0f, f)
-                    content.invalidateOutline()
+                    val scale = MIN_SCALE + (1f - MIN_SCALE) * f
+                    content.scaleX = scale
+                    content.scaleY = scale
+                    // 前半程淡入：页面在放大的同时显影
+                    content.alpha = (f / 0.55f).coerceAtMost(1f)
                 }
                 addListener(object : Animator.AnimatorListener {
                     override fun onAnimationStart(animation: Animator) = Unit
@@ -107,19 +101,13 @@ object NoteTransition {
             }
         }
 
-        private fun lerp(from: Float, to: Float, f: Float) = from + (to - from) * f
-
         /** 动画结束/取消后必须还原所有临时变换，否则残留会影响后续布局与绘制 */
         private fun reset(content: View, w: Float, h: Float) {
             content.scaleX = 1f
             content.scaleY = 1f
-            content.translationX = 0f
-            content.translationY = 0f
             content.alpha = 1f
             content.pivotX = w / 2f
             content.pivotY = h / 2f
-            content.clipToOutline = false
-            content.outlineProvider = ViewOutlineProvider.BACKGROUND
         }
     }
 }

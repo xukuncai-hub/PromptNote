@@ -17,22 +17,13 @@
 
         <ImageButton
             android:id="@+id/btnBack"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            style="@style/Widget.HtmlNotes.TopIconButton"
             android:contentDescription="@string/action_back"
-            android:padding="12dp"
-            android:src="@drawable/ic_back"
-            app:tint="?attr/colorOnSurface" />
+            android:src="@drawable/ic_back" />
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
-            android:text="@string/settings"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            style="@style/Widget.HtmlNotes.TopBarTitle"
+            android:text="@string/settings" />
     </LinearLayout>
 
     <ScrollView
@@ -140,35 +131,59 @@
                 style="@style/Widget.HtmlNotes.Settings.Card">
 
                 <LinearLayout
-                    android:id="@+id/rowClear"
-                    style="@style/Widget.HtmlNotes.Settings.Row">
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
-                    <ImageView
-                        style="@style/Widget.HtmlNotes.Settings.Icon"
-                        android:src="@drawable/ic_delete"
-                        app:tint="?attr/colorError" />
+                    <!-- 便签数量统计 -->
+                    <LinearLayout style="@style/Widget.HtmlNotes.Settings.RowBase">
+
+                        <ImageView
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_info" />
+
+                        <TextView
+                            style="@style/Widget.HtmlNotes.Settings.Title"
+                            android:text="@string/empty_title" />
+
+                        <TextView
+                            android:id="@+id/notesCountValue"
+                            style="@style/Widget.HtmlNotes.Settings.Value" />
+                    </LinearLayout>
+
+                    <View style="@style/Widget.HtmlNotes.Settings.Divider" />
 
                     <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:id="@+id/rowClear"
+                        style="@style/Widget.HtmlNotes.Settings.Row">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/settings_clear"
-                            android:textColor="?attr/colorError"
-                            android:textSize="15sp" />
+                        <ImageView
+                            style="@style/Widget.HtmlNotes.Settings.Icon"
+                            android:src="@drawable/ic_delete"
+                            app:tint="?attr/colorError" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/settings_clear_summary"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="12sp" />
+                            android:layout_marginStart="16dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/settings_clear"
+                                android:textColor="?attr/colorError"
+                                android:textSize="16sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/settings_clear_summary"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="12sp" />
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

@@ -1,32 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Material 3 浅色色板（现代简洁风） -->
-    <color name="md_primary">#4F5BDB</color>
+    <!--
+      Modern 编辑风色板（浅色）。
+      沿用 M3 的 token 结构（Primary / Secondary / Tertiary / Error / Neutral / NeutralVariant
+      与五档 Surface 容器），但色值换成现代编辑风的取向：
+        · 主色 #553F83 —— 深靛紫，比 M3 基线紫更沉，压得住大面积留白
+        · Ink #111111 —— 近黑而非纯黑，正文对比度 ≥ 15:1
+        · 中性色阶去紫调、偏暖 —— 纸感来自这里的微暖，不是靠贴图
+        · Error #DC2626 —— 语义危险色，与成功/警告同一饱和度体系
+
+      换肤主色仍由 values/colors_theme.xml 的 8 套覆盖层提供，本文件是默认（第 1 套）的底色。
+    -->
+    <color name="md_primary">#553F83</color>
     <color name="md_on_primary">#FFFFFF</color>
-    <color name="md_primary_container">#E0E1FF</color>
-    <color name="md_on_primary_container">#10124E</color>
-    <color name="md_secondary">#5C5E70</color>
+    <color name="md_primary_container">#E7E0F5</color>
+    <color name="md_on_primary_container">#2A1C4D</color>
+
+    <color name="md_secondary">#4A4A4A</color>
     <color name="md_on_secondary">#FFFFFF</color>
-    <color name="md_secondary_container">#E5E4EE</color>
-    <color name="md_on_secondary_container">#1A1B2F</color>
-    <color name="md_surface">#FAFAFC</color>
-    <color name="md_on_surface">#1B1B20</color>
-    <color name="md_surface_variant">#F0F0F5</color>
-    <color name="md_surface_container_high">#E9E9F0</color>
-    <color name="md_on_surface_variant">#494A55</color>
-    <color name="md_outline">#E0E0E8</color>
-    <color name="md_outline_variant">#E9E9EF</color>
-    <color name="md_error">#BA1A1A</color>
+    <color name="md_secondary_container">#E4E1DC</color>
+    <color name="md_on_secondary_container">#1A1917</color>
+
+    <color name="md_tertiary">#7D6A52</color>
+    <color name="md_on_tertiary">#FFFFFF</color>
+    <color name="md_tertiary_container">#F0E4D4</color>
+    <color name="md_on_tertiary_container">#2A1F12</color>
+
+    <color name="md_error">#DC2626</color>
+    <color name="md_on_error">#FFFFFF</color>
+    <color name="md_error_container">#FCE7E7</color>
+    <color name="md_on_error_container">#3D0F0F</color>
+
+    <!-- Neutrals：暖中性（微偏黄的灰）。层级靠明度差拉开，不靠色相 -->
+    <color name="md_surface">#FCFBF9</color>
+    <color name="md_on_surface">#111111</color>
+    <color name="md_surface_variant">#EDEAE4</color>
+    <color name="md_on_surface_variant">#3F3D3A</color>
+    <color name="md_outline">#73706B</color>
+    <color name="md_outline_variant">#D6D2CB</color>
+    <color name="md_inverse_surface">#1C1B1A</color>
+    <color name="md_inverse_on_surface">#F7F5F2</color>
+
+    <!-- Surface 容器五档：暖灰阶，相邻两档明度差约 3%，保证"同色系深浅"而非描边 -->
+    <color name="md_surface_container_lowest">#FFFFFF</color>
+    <color name="md_surface_container_low">#F7F5F1</color>
+    <color name="md_surface_container">#F2F0EC</color>
+    <color name="md_surface_container_high">#EAE7E1</color>
+    <color name="md_surface_container_highest">#E2DED7</color>
+
+    <!-- 高亮按钮的字色：压在黄色荧光底上用深褐，保证 ≥ 9:1 对比度（不能改成金色系） -->
     <color name="hl_text">#5D4037</color>
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
     <color name="ic_launcher_background">#4F5BDB</color>
 
-    <!-- 卡片低饱和柔和底色（浅色）：贴近 surface 的淡彩，降低视觉噪声 -->
-    <color name="card_bg_0">#FAF6EF</color>
-    <color name="card_bg_1">#F1F7F3</color>
-    <color name="card_bg_2">#EFF4FA</color>
-    <color name="card_bg_3">#FAF2F0</color>
-    <color name="card_bg_4">#F4F1F8</color>
-    <color name="card_bg_5">#EFF6F5</color>
+    <!-- 卡片点击涟漪：中性低透明度，压在卡片上只是一层很轻的按压感；
+         直接用主题色会因为 MaterialCardView 不做二次降透明而铺满整张卡 -->
+    <color name="card_ripple">#1F000000</color>
+
+    <!--
+      卡片底色（6 色轮换）：低饱和纸色，色相差异保留但整体明度/饱和度收敛到同一档，
+      轮换仍然可辨、并排却不吵。浅色值在本文件，深色值在 values-night/colors.xml。
+    -->
+    <color name="card_bg_0">#EDE5D8</color>
+    <color name="card_bg_1">#E4E3EF</color>
+    <color name="card_bg_2">#F0E3E5</color>
+    <color name="card_bg_3">#F3E5DE</color>
+    <color name="card_bg_4">#E2E8E4</color>
+    <color name="card_bg_5">#E7E4DF</color>
 </resources>

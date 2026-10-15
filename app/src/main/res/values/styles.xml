@@ -10,6 +10,15 @@
     <style name="Widget.HtmlNotes.Settings" parent="" />
     <style name="Widget.HtmlNotes.Sheet" parent="" />
 
+    <!-- ════════ 顶栏标题（自绘顶栏与首页 MaterialToolbar 共用同一套字阶） ════════ -->
+
+    <style name="Widget.HtmlNotes.TopBarTitle" parent="TextAppearance.HtmlNotes.ToolbarTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
     <!-- ════════ 编辑器：顶栏图标按钮 ════════ -->
     <style name="Widget.HtmlNotes.TopIconButton" parent="Widget.AppCompat.ImageButton">
         <item name="android:layout_width">48dp</item>
@@ -59,46 +68,78 @@
         <item name="android:textColor">@color/tool_btn_text</item>
     </style>
 
-    <!-- 代码片段胶囊：稍宽 + 统一 13sp -->
+    <!-- 代码片段胶囊：稍宽 + 统一 14sp -->
     <style name="Widget.HtmlNotes.Tool.Chip.Wide" parent="Widget.HtmlNotes.Tool.Chip">
         <item name="android:paddingHorizontal">12dp</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
     </style>
 
-    <!-- 键盘收起时的工具栏胶囊入口 -->
-    <style name="Widget.HtmlNotes.Tool.Capsule">
+    <!--
+      选区浮条的动作项。比普通 Chip 高一档（40dp）：浮条是手指最容易
+      够偏的地方，且它要能一眼读出 B/I/U 的当前状态。文字统一 14sp。
+    -->
+    <style name="Widget.HtmlNotes.Selection.Action" parent="Widget.HtmlNotes.Tool.Chip">
+        <item name="android:layout_height">40dp</item>
+        <item name="android:paddingHorizontal">8dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <!--
+      一级工具栏的面板入口：图标 + 文字标签，40dp 高度与 B/I/U/S 对齐。
+      原来只放一个抽象图标和「Aa」，不点开看不出里面是哪些功能，所以总是找不到。
+      文字色不能靠 Chip 的 textColor（ViewGroup 上无效），由内部 TextView 各自指定。
+    -->
+    <style name="Widget.HtmlNotes.Tool.LabelChip">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">40dp</item>
+        <item name="android:background">@drawable/bg_tool_btn</item>
+        <item name="android:foreground">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingHorizontal">10dp</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <!-- 键盘收起时的工具栏胶囊入口（自带背景与阴影：父容器不再挂背景，
+             否则展开瞬间会有一条满屏磨砂条直接出现，与高度动画打架） -->
+    <style name="Widget.HtmlNotes.Tool.Capsule">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">42dp</item>
         <item name="android:layout_gravity">center_horizontal</item>
         <item name="android:background">@drawable/bg_toolbar_dock</item>
+        <item name="android:elevation">6dp</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
         <item name="android:gravity">center</item>
         <item name="android:orientation">horizontal</item>
-        <item name="android:paddingHorizontal">18dp</item>
+        <item name="android:paddingHorizontal">20dp</item>
     </style>
 
     <!-- ════════ 设置页 ════════ -->
 
-    <!-- 分区圆角卡片 -->
-    <style name="Widget.HtmlNotes.Settings.Card" parent="Widget.Material3.CardView.Filled">
+    <!-- 分区圆角卡片：16dp M3 柔和圆角 + 1dp hairline 描边，层级靠"描边+底色"而不是阴影 -->
+    <style name="Widget.HtmlNotes.Settings.Card" parent="Widget.Material3.CardView.Outlined">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="cardCornerRadius">20dp</item>
+        <item name="cardCornerRadius">16dp</item>
         <item name="cardElevation">0dp</item>
-        <item name="cardBackgroundColor">?attr/colorSurfaceVariant</item>
-        <item name="strokeWidth">0dp</item>
+        <item name="cardBackgroundColor">?attr/colorSurfaceContainer</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="strokeColor">?attr/colorOutlineVariant</item>
     </style>
 
-    <!-- 分区标题 -->
+    <!-- 分区标题：左缩进 = 卡片外边距 16dp + 行内边距 16dp，与卡片内容区左边缘对齐 -->
     <style name="Widget.HtmlNotes.Settings.SectionTitle">
         <item name="android:layout_width">wrap_content</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:layout_marginStart">16dp</item>
         <item name="android:layout_marginBottom">6dp</item>
         <item name="android:textColor">?attr/colorPrimary</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textStyle">bold</item>
+        <!-- 编辑风的分组标签：疏排小字，与正文字距拉开层级 -->
+        <item name="android:letterSpacing">0.06</item>
     </style>
 
     <!-- 信息行基类：不可点击（作者/版本等纯展示行） -->
@@ -121,7 +162,7 @@
         <item name="android:layout_width">22dp</item>
         <item name="android:layout_height">22dp</item>
         <item name="android:importantForAccessibility">no</item>
-        <item name="android:tint">?attr/colorOnSurface</item>
+        <item name="android:tint">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <style name="Widget.HtmlNotes.Settings.Title">
@@ -132,7 +173,7 @@
         <item name="android:maxLines">1</item>
         <item name="android:ellipsize">middle</item>
         <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:textSize">15sp</item>
+        <item name="android:textSize">16sp</item>
     </style>
 
     <style name="Widget.HtmlNotes.Settings.Value">
@@ -166,7 +207,7 @@
         <item name="android:layout_width">22dp</item>
         <item name="android:layout_height">22dp</item>
         <item name="android:importantForAccessibility">no</item>
-        <item name="android:tint">?attr/colorPrimary</item>
+        <item name="android:tint">?attr/colorOnSurfaceVariant</item>
     </style>
 
     <style name="Widget.HtmlNotes.Sheet.Title">

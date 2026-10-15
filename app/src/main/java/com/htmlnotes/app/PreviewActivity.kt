@@ -5,7 +5,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.View
 import android.webkit.JavascriptInterface
@@ -33,6 +32,13 @@ class PreviewActivity : AppCompatActivity() {
 
     /** 子资源失败的非阻断提示每轮加载只弹一次，避免多个坏脚本刷屏。 */
     private var scriptErrorShown = false
+
+    /**
+     * 容器变换未触发时的兜底加载（系统动画被关时 onTransitionEnd 不会来）。
+     * 必须持有引用：若用户在 800ms 内退出，这个 Runnable 会在 onDestroy 之后
+     * 才跑，而那时 WebView 已经被 destroy() 了。
+     */
+    private var loadFallback: Runnable? = null
 
     /** JS 错误桥：捕获页面脚本资源加载失败，回传原生层给出可见提示。 */
     private inner class ErrorBridge {
@@ -124,6 +130,17 @@ class PreviewActivity : AppCompatActivity() {
         binding.webView.addJavascriptInterface(ErrorBridge(), "HtmlNotePreview")
         binding.webView.webViewClient = object : WebViewClient() {
 
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val url = request?.url?.toString() ?: return false
+                return handleExternalUrl(url)
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                if (url == null) return false
+                return handleExternalUrl(url)
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 pageFinished = true
@@ -196,12 +213,15 @@ class PreviewActivity : AppCompatActivity() {
                 override fun onTransitionPause(transition: android.transition.Transition) {}
                 override fun onTransitionResume(transition: android.transition.Transition) {}
             })
-            binding.webView.postDelayed(loadPage, 800)
+            val fallback = Runnable { loadPage() }
+            loadFallback = fallback
+            binding.webView.postDelayed(fallback, 800)
         } else {
             loadPage()
         }
 
         binding.btnRetry.setOnClickListener { retryLoad() }
+        binding.btnRetry.attachPressScale(0.92f, 100L)
     }
 
     /**
@@ -267,12 +287,33 @@ class PreviewActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(intent, getString(R.string.share)))
     }
 
+    /** 超链接拦截：外部 http/https/mailto/tel 链接用系统浏览器/应用打开 */
+    private fun handleExternalUrl(url: String): Boolean {
+        if (url.startsWith("https://appassets.androidplatform.net") ||
+            url.startsWith("data:") ||
+            url.startsWith("file:")
+        ) {
+            return false
+        }
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url))
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            Toast.makeText(this, url, Toast.LENGTH_SHORT).show()
+            false
+        }
+    }
+
     private fun finishWithAnim() {
         finish()
         if (!containerTransition) overridePendingTransition(R.anim.fade_in, R.anim.slide_out_right)
     }
 
     override fun onDestroy() {
+        // 兜底加载必须先撤掉：它跑在 WebView 上，而下面就会 destroy 掉 WebView
+        loadFallback?.let { binding.webView.removeCallbacks(it) }
+        loadFallback = null
         // WebView 持有 Activity 的 Context，且开启了 JS，不销毁会造成内存泄漏
         binding.webView.stopLoading()
         binding.webView.webChromeClient = null

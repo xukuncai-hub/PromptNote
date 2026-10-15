@@ -3,33 +3,36 @@ package com.htmlnotes.app
 import android.animation.AnimatorSet
 import android.animation.LayoutTransition
 import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.Typeface
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.text.InputType
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ArrayAdapter
-import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsAnimationCompat
 import androidx.core.view.WindowInsetsCompat
@@ -40,6 +43,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.htmlnotes.app.databinding.ActivityEditorBinding
 import com.htmlnotes.app.databinding.SheetMoreBinding
+import com.htmlnotes.app.databinding.ViewSelectionBarBinding
+import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
 import java.text.SimpleDateFormat
@@ -76,6 +81,58 @@ class EditorActivity : AppCompatActivity() {
     private var lastImeVisible: Boolean? = null
     private var richBlock = ""
     private var richStatesJson: String? = null
+
+    // ---------------- 选区通道与锚定 ----------------
+    // 见 docs/plans/2026-10-01-editor-interaction-design.md
+
+    /**
+     * 选区在 WebView 视口内的矩形（JS `getBoundingClientRect`，CSS px 与视图像素 1:1）。
+     * `collapsed` = 只有光标、没有选中内容。
+     */
+    private data class SelRect(
+        val left: Int,
+        val top: Int,
+        val width: Int,
+        val height: Int,
+        val collapsed: Boolean
+    )
+
+    /** 写入在 WebView 的 JavaBridge 线程，读取在主线程。 */
+    @Volatile
+    private var selRect: SelRect? = null
+
+    /**
+     * 锚定的 armed/disarm 状态。
+     *
+     * 没有它的话，连续打字时每次 keystroke 都会判定「选区要掉出视野了」并把内容
+     * 往上拽 —— 光标被不停拉扯，比遮挡本身还难受。滚过一次就 disarm，直到选区
+     * 自己回到安全区才重新 arm。
+     */
+    private var anchorArmed = true
+    private var selScrollAnimator: ValueAnimator? = null
+
+    // ---------------- 选区浮条 ----------------
+
+    private var selPopup: PopupWindow? = null
+    private var selBar: ViewSelectionBarBinding? = null
+    private var selBarDismissed = true
+    /** 轻提示；键盘抬起时系统 Toast 会被盖住，所以编辑器内统一走它。 */
+    private var tip: EditorTip? = null
+    /** root 的四边 padding（由 insets 写入），浮条用它换算可用区域。 */
+    private val rootPad = IntArray(4)
+
+    /**
+     * 正文最近一次快照，由 JS 在每次真正编辑后回传（见 RichBridge.onContent）。
+     *
+     * 保存路径原本只能靠 evaluateJavascript 异步读取正文，而 onPause 之后紧接着
+     * 就是 onStop/onDestroy，onDestroy 会 destroy() 掉 WebView —— 回调再也回不来，
+     * 于是「旋转屏幕、或被系统回收」会丢掉上一次自动保存之后的所有编辑（最多 30 秒）。
+     * 有这份同步可取的快照，保存就不再依赖那个回调。
+     *
+     * @Volatile：写入发生在 WebView 的 JavaBridge 线程，读取在主线程。
+     */
+    @Volatile
+    private var richCache: String? = null
     private val autoSaveIntervalMs = 30_000L
     private val mainHandler = Handler(Looper.getMainLooper())
     private val autoSaveTask = object : Runnable {
@@ -84,6 +141,22 @@ class EditorActivity : AppCompatActivity() {
             mainHandler.postDelayed(this, autoSaveIntervalMs)
         }
     }
+
+    /**
+     * 延时聚焦正文 / 弹键盘的两个任务。必须在 onDestroy 里撤销：
+     * 它们跑在 WebView 上（focusBodyTask 还会调 evaluateJavascript，在已 destroy
+     * 的 WebView 上执行是原生层崩溃），而且会让键盘在用户已经返回之后的界面上
+     * 突然弹出来。
+     */
+    private var focusTitleTask: Runnable? = null
+    private var focusBodyTask: Runnable? = null
+
+    /**
+     * CursorKeeper 的注销函数。必须持有并在 onDestroy 调用：它会摘掉全局布局监听，
+     * 并撤掉那个 120ms 的延迟 blur —— 延迟任务会对 WebView 调 evaluateJavascript，
+     * 而 onDestroy 紧接着就 destroy 掉它。
+     */
+    private var cursorKeeperDetach: (() -> Unit)? = null
 
     private val enabledColor: Int by lazy {
         MaterialColors.getColor(binding.btnDone, android.R.attr.textColorPrimary)
@@ -122,11 +195,13 @@ class EditorActivity : AppCompatActivity() {
 
         // 新建 HTML 便签：聚焦标题并弹出键盘，打开即可输入（文本便签由 loadRichContent 聚焦正文）
         if (projectId == null && noteType == Project.TYPE_HTML) {
-            binding.edTitle.postDelayed({
+            val task = Runnable {
                 binding.edTitle.requestFocus()
                 ViewCompat.getWindowInsetsController(binding.edTitle)
                     ?.show(WindowInsetsCompat.Type.ime())
-            }, 300)
+            }
+            focusTitleTask = task
+            binding.edTitle.postDelayed(task, 300)
         }
 
         // ---- 系统栏 + 键盘 insets：统一用 WindowInsets 计算底部 padding ----
@@ -138,18 +213,23 @@ class EditorActivity : AppCompatActivity() {
         var padT = -1
         var padR = -1
         var padB = -1
-        fun applyInsets(insets: WindowInsetsCompat) {
-            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+        /** 最近一次收到的 insets：键盘动画结束时用它把最终 padding 一次落地。 */
+        var lastInsets: WindowInsetsCompat? = null
 
-            // 键盘可见性驱动工具栏形态：收起时胶囊、弹出时展开。
-            // 必须放在下面的提前 return 之前 —— 否则 padding 未变时会被跳过，形态切不过来。
+        /** 键盘可见性驱动工具栏形态：收起时胶囊、弹出时展开。 */
+        fun syncDockMode(insets: WindowInsetsCompat) {
             val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
             if (imeVisible != lastImeVisible) {
                 lastImeVisible = imeVisible
                 updateDockMode(imeVisible)
             }
+        }
 
+        /** 静态 insets（首帧 / 旋转 / 导航栏变化 / 键盘动画收尾）：把 padding 落到根布局。 */
+        fun applyInsets(insets: WindowInsetsCompat) {
+            val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
+            syncDockMode(insets)
             val l = sys.left
             val t = sys.top
             val r = sys.right
@@ -159,13 +239,28 @@ class EditorActivity : AppCompatActivity() {
             padT = t
             padR = r
             padB = b
+            rootPad[0] = l
+            rootPad[1] = t
+            rootPad[2] = r
+            rootPad[3] = b
             binding.root.setPadding(l, t, r, b)
+            // 键盘起落会同时改变正文和工具栏的位置，浮条得跟着重算
+            updateSelectionBar()
         }
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            lastInsets = insets
             applyInsets(insets)
             insets
         }
-        // 键盘动画过程中持续跟进，内容随键盘平滑抬升/回落
+
+        /*
+         * 键盘动画期间只平移悬浮工具栏，不逐帧改 root padding。
+         *
+         * setPadding 会无条件 requestLayout，逐帧改 padding 等于每帧让整棵树重新测量布局，
+         * WebView / 代码编辑器还要跟着重排内容 —— 这才是工具栏跟随键盘「不丝滑」的主因。
+         * 改成只动 translationY（纯绘制属性，不触发布局），键盘收放全程顺滑；
+         * 动画结束时再一次性落地最终 padding，并同一帧内把平移归零，落点不变、看不到跳动。
+         */
         ViewCompat.setWindowInsetsAnimationCallback(
             binding.root,
             object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
@@ -173,8 +268,21 @@ class EditorActivity : AppCompatActivity() {
                     insets: WindowInsetsCompat,
                     runningAnimations: MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
-                    applyInsets(insets)
+                    lastInsets = insets
+                    syncDockMode(insets)
+                    val sysBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+                    val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+                    // 工具栏要停在 max(导航栏, 键盘) 之上；它当前按 padB 让位，
+                    // 差额用平移补齐。键盘弹出与收起两个方向都成立。
+                    val base = if (padB < 0) sysBottom else padB
+                    dockingToolbar().translationY = (base - maxOf(sysBottom, imeBottom)).toFloat()
                     return insets
+                }
+
+                override fun onEnd(animation: WindowInsetsAnimationCompat) {
+                    // 先同步落地最终 padding，再清平移：两者在同一帧内换手，位置连续
+                    lastInsets?.let { applyInsets(it) }
+                    dockingToolbar().translationY = 0f
                 }
             }
         )
@@ -188,6 +296,11 @@ class EditorActivity : AppCompatActivity() {
                 if (lastImeVisible == true) hideKeyboard() else saveAndExit()
             }
         })
+        // 面板开合会让正文高度变化（weight 分配），这正是选区可能被挤出视口的时刻。
+        // 布局落定后再判一次锚定，把用户正在改的那段字拉回安全区。
+        binding.richWeb.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+            if (bottom != oldBottom) evaluateAnchor()
+        }
         binding.btnUndo.setOnClickListener { performUndo() }
         binding.btnRedo.setOnClickListener { performRedo() }
         binding.btnDone.setOnClickListener { doDone() }
@@ -196,6 +309,11 @@ class EditorActivity : AppCompatActivity() {
         // 胶囊本身就是"开始编辑"的入口：点它唤起键盘，工具栏随之展开
         binding.capsuleText.setOnClickListener { focusBody() }
         binding.capsuleCode.setOnClickListener { focusBody() }
+
+        // 选区浮条走 PopupWindow，不进布局；这里把视图建好、把动作接上
+        setupSelectionBar()
+        // 轻提示贴在工具栏上方；下边界每次显示时重新取，胶囊↔完整条切换会改它
+        tip = EditorTip(binding.root) { tipBottomLimit() }
 
         // 胶囊↔完整条、面板展开/收起统一走柔和过渡：渐显 + 轻微上浮。
         // 注意：LayoutTransition 只拦截「直接子 View」的显隐/布局变化——
@@ -271,7 +389,7 @@ class EditorActivity : AppCompatActivity() {
             binding.segTitle, binding.segSubtitle, binding.segHeading,
             binding.segBody, binding.segCaption,
             binding.btnSize, binding.btnColor, binding.btnHl, binding.btnFont,
-            binding.btnHr, binding.btnUl, binding.btnOl, binding.btnQuote,
+            binding.btnHr, binding.btnUl, binding.btnOl, binding.btnTodo, binding.btnQuote,
             binding.btnOutdent, binding.btnIndent, binding.btnCode,
             binding.btnLink, binding.btnImage, binding.btnClear,
             binding.capsuleText, binding.capsuleCode,
@@ -288,15 +406,17 @@ class EditorActivity : AppCompatActivity() {
         }
 
         // ---- 文字模式工具栏 ----
-        binding.btnTB.setOnClickListener { exec("bold", null); toast(R.string.toast_bold) }
-        binding.btnTI.setOnClickListener { exec("italic", null); toast(R.string.toast_italic) }
-        binding.btnTU.setOnClickListener { exec("underline", null); toast(R.string.toast_underline) }
-        binding.btnTS.setOnClickListener { exec("strikeThrough", null); toast(R.string.toast_strike) }
+        // 行内样式操作不再逐个弹 toast：按钮本身有选中态高亮，正文也立刻可见，
+        // 每按一次都弹一句提示纯属干扰，编辑时尤其明显
+        binding.btnTB.setOnClickListener { exec("bold", null) }
+        binding.btnTI.setOnClickListener { exec("italic", null) }
+        binding.btnTU.setOnClickListener { exec("underline", null) }
+        binding.btnTS.setOnClickListener { exec("strikeThrough", null) }
         // S 按钮以删除线呈现，一眼看懂用途
         binding.btnTS.paintFlags = binding.btnTS.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
-        binding.btnAlignL.setOnClickListener { exec("justifyLeft", null); toast(R.string.toast_align) }
-        binding.btnAlignC.setOnClickListener { exec("justifyCenter", null); toast(R.string.toast_align) }
-        binding.btnAlignR.setOnClickListener { exec("justifyRight", null); toast(R.string.toast_align) }
+        binding.btnAlignL.setOnClickListener { exec("justifyLeft", null) }
+        binding.btnAlignC.setOnClickListener { exec("justifyCenter", null) }
+        binding.btnAlignR.setOnClickListener { exec("justifyRight", null) }
         // 两个格式面板互斥展开
         binding.btnPanelStyle.setOnClickListener { togglePanel(binding.panelStyle, binding.btnPanelStyle) }
         binding.btnPanelFormat.setOnClickListener { togglePanel(binding.panelFormat, binding.btnPanelFormat) }
@@ -311,13 +431,15 @@ class EditorActivity : AppCompatActivity() {
         // ---- 二级面板：低频格式 ----
         binding.btnSize.setOnClickListener { pickSize() }
         binding.btnColor.setOnClickListener { pickColor() }
-        binding.btnHl.setOnClickListener {
-            exec("hiliteColor", "#FFEB3B"); toast(R.string.toast_highlight)
-        }
+        binding.btnHl.setOnClickListener { exec("hiliteColor", "#FFEB3B") }
         binding.btnFont.setOnClickListener { cycleFontFamily() }
         binding.btnHr.setOnClickListener { exec("insertHorizontalRule", null); toast(R.string.toast_hr) }
         binding.btnUl.setOnClickListener { exec("insertUnorderedList", null) }
         binding.btnOl.setOnClickListener { exec("insertOrderedList", null) }
+        binding.btnTodo.setOnClickListener {
+            exec("insertHTML", "<div><input type=\"checkbox\"> &nbsp;</div>")
+            toast(R.string.todo_menu)
+        }
         binding.btnQuote.setOnClickListener { exec("formatBlock", "<blockquote>") }
         binding.btnOutdent.setOnClickListener { exec("outdent", null) }
         binding.btnIndent.setOnClickListener { exec("indent", null) }
@@ -328,16 +450,13 @@ class EditorActivity : AppCompatActivity() {
 
         // ---- 代码模式工具栏（撤销/重做只在顶栏，这里不重复） ----
         binding.btnCIndent.setOnClickListener {
-            binding.edContent.indentSelection(false)
-            flash(binding.btnCIndent); updateCodeUndoRedo(); markDirty()
+            codeAction(binding.btnCIndent) { binding.edContent.indentSelection(false) }
         }
         binding.btnCOutdent.setOnClickListener {
-            binding.edContent.indentSelection(true)
-            flash(binding.btnCOutdent); updateCodeUndoRedo(); markDirty()
+            codeAction(binding.btnCOutdent) { binding.edContent.indentSelection(true) }
         }
         binding.btnFormatCode.setOnClickListener {
-            binding.edContent.formatCode()
-            flash(binding.btnFormatCode); updateCodeUndoRedo(); markDirty()
+            codeAction(binding.btnFormatCode) { binding.edContent.formatCode() }
             toast(R.string.toast_format)
         }
         binding.btnClearCode.setOnClickListener { confirmClearCode() }
@@ -358,7 +477,7 @@ class EditorActivity : AppCompatActivity() {
         binding.btnSnCheck.setOnClickListener { insertCodeSnippet("☑ "); toast(R.string.check_list) }
         binding.btnCopyAll.setOnClickListener { copyAllCode() }
 
-        CursorKeeper.attach(this, binding.edTitle, binding.edContent, binding.richWeb)
+        cursorKeeperDetach = CursorKeeper.attach(this, binding.edTitle, binding.edContent, binding.richWeb)
     }
 
     // ---------------- 工具栏通用：面板折叠 / 短暂高亮 / 轻量 toast ----------------
@@ -395,8 +514,31 @@ class EditorActivity : AppCompatActivity() {
         v.postDelayed({ v.isSelected = false }, 320)
     }
 
-    private fun toast(res: Int) = Toast.makeText(this, res, Toast.LENGTH_SHORT).show()
-    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    private fun toast(res: Int) {
+        val t = tip
+        if (t != null) t.show(res) else Toast.makeText(this, res, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * 代码工具栏操作的统一收尾。
+     *
+     * 编辑框失焦时 selectionStart 是 -1，缩进/格式化内部会直接 return、什么也不做；
+     * 而原来的写法无论如何都会 markDirty()，于是「点了一下没反应的按钮」也会把便签
+     * 标成未保存、并触发一次没有变化的自动保存。这里先拿回焦点，再按文本是否真的
+     * 变了决定要不要标脏。
+     */
+    private fun codeAction(v: View, action: () -> Unit) {
+        if (binding.edContent.selectionStart < 0) binding.edContent.requestFocus()
+        val before = binding.edContent.text?.toString()
+        action()
+        flash(v)
+        updateCodeUndoRedo()
+        if (binding.edContent.text?.toString() != before) markDirty()
+    }
+    private fun toast(msg: String) {
+        val t = tip
+        if (t != null) t.showText(msg) else Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+    }
 
     /** 标题改动同样标记为草稿已变更，保证只改标题也会被自动保存，并显示"未保存"状态。 */
     private fun markDirty() {
@@ -406,6 +548,9 @@ class EditorActivity : AppCompatActivity() {
 
     /** 顶部右侧"未保存 / 已保存 ✓"状态提示。 */
     private fun showSaveState(text: String, color: Int, sticky: Boolean) {
+        // autoSaveDraft 的 collectContent 走 JS 异步回调，结果可能晚于 onDestroy 才回来；
+        // 这里若照常执行，就会在 Activity 销毁之后又挂一条 2400ms 的延迟任务。
+        if (isFinishing || isDestroyed) return
         binding.saveState.text = text
         binding.saveState.setTextColor(color)
         binding.saveState.animate().cancel()
@@ -417,6 +562,7 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private val hideSaveState = Runnable {
+        if (isFinishing || isDestroyed) return@Runnable
         binding.saveState.animate().alpha(0f).setDuration(420).start()
     }
 
@@ -443,6 +589,25 @@ class EditorActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         mainHandler.removeCallbacks(autoSaveTask)
+        // 延时聚焦任务跑在 WebView / EditText 上，必须赶在 destroy 之前撤掉
+        focusTitleTask?.let { binding.edTitle.removeCallbacks(it) }
+        focusBodyTask?.let { binding.richWeb.removeCallbacks(it) }
+        focusTitleTask = null
+        focusBodyTask = null
+        // 选区锚定的滚动动画跑在 WebView 上，销毁前必须停掉
+        selScrollAnimator?.cancel()
+        selScrollAnimator = null
+        dismissSelectionBar()
+        selPopup = null
+        selBar = null
+        tip?.dispose()
+        tip = null
+        // 「未保存」提示的淡出是 view.postDelayed 挂在 saveState 上的，不撤会跑到 destroy 之后
+        binding.saveState.removeCallbacks(hideSaveState)
+        binding.saveState.animate().cancel()
+        // 摘掉 CursorKeeper 的全局布局监听与它挂起的延迟 blur（会碰 WebView）
+        cursorKeeperDetach?.invoke()
+        cursorKeeperDetach = null
         // 富文本 WebView 注册了 @JavascriptInterface（间接持有 Activity），不销毁会泄漏。
         // 代码模式下它虽然没被使用，但同样持有资源，一并销毁。
         binding.richWeb.removeJavascriptInterface("HtmlNotes")
@@ -467,6 +632,15 @@ class EditorActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 binding.richWeb.evaluateJavascript(
                     "var ed=document.getElementById('ed');" +
+                        // 正文真正变化时才回传完整 HTML：MutationObserver 置脏、
+                        // refreshState 冲刷。光标移动与选区变化不触发序列化，
+                        // 序列化开销只落在真正的编辑上。
+                        "var _dirty=false;" +
+                        // 上一次已回传的选区串。selectionchange 在敲键时每次都触发，
+                        // 坐标没变就不要再过一遍桥。
+                        "var _lr='';" +
+                        "new MutationObserver(function(){_dirty=true;})" +
+                        ".observe(ed,{childList:true,subtree:true,characterData:true,attributes:true});" +
                         "function refreshState(){" +
                         "var st=JSON.stringify({" +
                         "b:document.queryCommandState('bold')," +
@@ -481,17 +655,49 @@ class EditorActivity : AppCompatActivity() {
                         "HtmlNotes.onState(document.queryCommandEnabled('undo')," +
                         "document.queryCommandEnabled('redo')," +
                         "document.queryCommandValue('formatBlock')," +
-                        "ed.innerText.length,st);}" +
+                        "ed.innerText.length,st);" +
+                        // 选区坐标（相对视口）。原生拿它算锚定、摆浮条，是整套交互的唯一事实来源。
+                        // 放在 onState 之后：浮条要读同一轮回传的 B/I/U 状态，顺序反了就会闪一下旧值。
+                        "var _r='';try{var _s=getSelection();if(_s.rangeCount){" +
+                        "var _b=_s.getRangeAt(0).getBoundingClientRect();" +
+                        "_r=JSON.stringify([Math.round(_b.left),Math.round(_b.top)," +
+                        "Math.round(_b.width),Math.round(_b.height),_s.isCollapsed?1:0]);}}" +
+                        "catch(_e){}" +
+                        "if(_r&&_r!==_lr){_lr=_r;HtmlNotes.onSelection(_r);}" +
+                        "if(_dirty){_dirty=false;HtmlNotes.onContent(ed.innerHTML);}}" +
                         "ed.addEventListener('input',function(){refreshState();HtmlNotes.onDirty();});" +
                         "ed.addEventListener('keyup',refreshState);" +
                         "ed.addEventListener('mouseup',refreshState);" +
                         // 光标/选区变化实时刷新工具栏状态，告别状态滞后
                         "document.addEventListener('selectionchange',refreshState);" +
+                        // 正文自己滚、以及原生主动滚，都会让选区的视口坐标变化：
+                        // 不订阅的话滚动之后原生拿到的还是旧坐标，浮条和锚定全都会错位。
+                        "window.addEventListener('scroll',refreshState,true);" +
+                        // 点正文：收起二级面板（原生收到后会再判一次锚定）
+                        "ed.addEventListener('click',function(){HtmlNotes.onEditorTap();});" +
+                        // 外接键盘快捷键。必须在页面里拦：Ctrl+X 之后的键事件早就被 IME/WebView 吃掉，
+                        // 原生 onKeyDown 根本收不到。capture 挂在 document 上，赶在浏览器默认动作之前
+                        // 抹掉它，否则 execCommand 会跟内置处理各翻一次加粗，等于没按。
+                        "document.addEventListener('keydown',function(e){" +
+                        "if(!(e.ctrlKey||e.metaKey)||e.altKey)return;" +
+                        "var k=(e.key||'').toLowerCase(),m='';" +
+                        "if(k==='b')m='bold';else if(k==='i')m='italic';else if(k==='u')m='underline';" +
+                        "else if(k==='z')m=e.shiftKey?'redo':'undo';" +
+                        "else if(k==='y')m='redo';else if(k==='a')m='selectAll';" +
+                        "if(!m)return;" +
+                        "e.preventDefault();e.stopPropagation();" +
+                        "document.execCommand(m,false,null);" +
+                        "refreshState();HtmlNotes.onShortcut(m);},true);" +
                         "document.execCommand('styleWithCSS', false, false);" +
+                        // 选区富文本快照（剪切/复制用）。返回 null 表示没有选区。
+                        "function _sp(){var s=getSelection();if(!s.rangeCount)return null;" +
+                        "var d=document.createElement('div');d.appendChild(s.getRangeAt(0).cloneContents());" +
+                        "return JSON.stringify({t:s.toString(),h:d.innerHTML});}" +
                         "document.getElementById('ed').innerHTML = ${JSONObject.quote(content)};" +
                         "refreshState();"
                 ) {
                     richReady = true
+                    richCache = content   // 与刚写入页面的正文一致，保存可直接取用
                 }
             }
         }
@@ -500,7 +706,11 @@ class EditorActivity : AppCompatActivity() {
     private fun loadRichContent(content: String) {
         setupRichWeb(content)
         binding.richWeb.loadDataWithBaseURL(null, NoteHtml.editorPage(NoteHtml.paletteOf(this)), "text/html", "UTF-8", null)
-        binding.richWeb.postDelayed({
+        val task = Runnable {
+            // 视图本身也要 requestFocus：只调 JS 的 ed.focus() 时，DOM 拿到了焦点、
+            // 键盘也会弹出，但 WebView 视图没有输入焦点，光标不会绘制 ——
+            // 表现就是打开便签看不到光标，得先点一下正文才出现。
+            binding.richWeb.requestFocus()
             binding.richWeb.evaluateJavascript(
                 "var ed=document.getElementById('ed');ed.focus();" +
                     "var r=document.createRange();r.selectNodeContents(ed);r.collapse(false);" +
@@ -509,7 +719,9 @@ class EditorActivity : AppCompatActivity() {
             )
             ViewCompat.getWindowInsetsController(binding.richWeb)
                 ?.show(WindowInsetsCompat.Type.ime())
-        }, 350)
+        }
+        focusBodyTask = task
+        binding.richWeb.postDelayed(task, 350)
     }
 
     /**
@@ -577,7 +789,8 @@ class EditorActivity : AppCompatActivity() {
             binding.edContent.undo()
             updateCodeUndoRedo()
         }
-        toast(R.string.toast_undo)
+        // 撤销是全静默的：正文变了，但没有任何地方告诉用户「刚刚撤销了一步」
+        toast(R.string.tip_undone)
     }
 
     private fun performRedo() {
@@ -587,13 +800,13 @@ class EditorActivity : AppCompatActivity() {
             binding.edContent.redo()
             updateCodeUndoRedo()
         }
-        toast(R.string.toast_redo)
+        toast(R.string.tip_redone)
     }
 
     private fun copyAllCode() {
         val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText("code", binding.edContent.text))
-        Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
+        toast(R.string.copied)
     }
 
     private fun confirmClearCode() {
@@ -692,9 +905,9 @@ class EditorActivity : AppCompatActivity() {
 
     private fun cycleFontFamily() {
         fontCycle = (fontCycle + 1) % fontStacks.size
+        // 按钮文案本身就是当前字体名，效果也立刻可见，不再多弹一句 toast
         binding.btnFont.text = resources.getStringArray(R.array.font_family_names)[fontCycle]
         exec("fontFamily", fontStacks[fontCycle])
-        toast(R.string.toast_font)
     }
 
     // ---------------- 顶栏撤销/重做状态 ----------------
@@ -709,6 +922,7 @@ class EditorActivity : AppCompatActivity() {
                 setUndoRedo(binding.btnUndo, undo)
                 setUndoRedo(binding.btnRedo, redo)
                 syncRichToolbar(block, states)
+                syncSelectionBarState()
                 updateMeta()
             }
         }
@@ -721,11 +935,67 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
+        /**
+         * 正文快照。调用点在 JavaBridge 线程，这里不做 runOnUiThread ——
+         * 只是往一个 @Volatile 字段里赋值，省掉每次编辑一条主线程消息。
+         */
+        @JavascriptInterface
+        fun onContent(html: String) {
+            richCache = html
+        }
+
+        /**
+         * 选区坐标。回传格式是 `[top, height, collapsed]` 数组的 JSON 文本。
+         *
+         * 只往 `@Volatile` 字段里写，坐标换算和滚动全部留在主线程的
+         * [onSelectionUpdated] 里做 —— 这条通道不持有 Activity 引用、不 post 延迟任务。
+         */
+        @JavascriptInterface
+        fun onSelection(rectJson: String) {
+            val r = parseSelRect(rectJson) ?: return
+            selRect = r
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                onSelectionUpdated()
+            }
+        }
+
+        /** 用户点到正文上：先把面板收掉，免得面板挡着他刚点开的光标。 */
+        @JavascriptInterface
+        fun onEditorTap() {
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                closePanels()
+            }
+        }
+
+        /**
+         * 外接键盘快捷键已由页面拦下并执行（Ctrl+B/I/U/Z/Y/A），这里只负责反馈。
+         *
+         * 撤销/重做是全静默的：正文变了，但没有任何地方告诉用户刚撤销了一步，
+         * 所以补一枚轻提示。加粗/斜体/下划线本身有工具栏按钮变亮作为反馈，不重复播报。
+         */
+        @JavascriptInterface
+        fun onShortcut(cmd: String) {
+            val res = when (cmd) {
+                "undo" -> R.string.tip_undone
+                "redo" -> R.string.tip_redone
+                else -> return
+            }
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                tip?.show(res)
+            }
+        }
+
         /** 重新把 _ic span 渲染为 <code> 风格 */
         @JavascriptInterface
         fun relayoutCodes() {
-            // @JavascriptInterface 运行在 WebView 的 JavaBridge 线程，而 WebView 方法必须在主线程调用
+            // @JavascriptInterface 运行在 WebView 的 JavaBridge 线程，而 WebView 方法必须在主线程调用。
+            // 但主线程队列里的这条可能排到 onDestroy 之后 —— 那时 WebView 已 destroy()，
+            // 再 evaluateJavascript 就打到已销毁的实例上。
             runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
                 binding.richWeb.evaluateJavascript(
                     "document.querySelectorAll('#ed span._ic').forEach(function(s){" +
                         "var c=document.createElement('code');c.innerHTML=s.innerHTML;" +
@@ -734,6 +1004,265 @@ class EditorActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    // ---------------- 选区锚定：让「正在改的那段字」永远留在视野里 ----------------
+
+    private fun parseSelRect(json: String): SelRect? = try {
+        val a = JSONArray(json)
+        SelRect(
+            left = a.getInt(0),
+            top = a.getInt(1),
+            width = a.getInt(2),
+            height = a.getInt(3),
+            collapsed = a.getInt(4) == 1
+        )
+    } catch (e: Exception) {
+        null
+    }
+
+    private fun onSelectionUpdated() {
+        evaluateAnchor()
+        updateSelectionBar()
+    }
+
+    // ---------------- 选区浮条：贴着选区出现，替代系统的选择菜单 ----------------
+
+    private fun setupSelectionBar() {
+        val bar = ViewSelectionBarBinding.inflate(layoutInflater)
+        selBar = bar
+        // isFocusable=false 是关键：浮条一旦可聚焦，点它就会把焦点从 WebView 抢走，
+        // 键盘被收起、选区也可能失效，紧接着的所有格式命令都作用不到选区上。
+        val popup = PopupWindow(
+            bar.root, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, false
+        ).apply {
+            isFocusable = false
+            isOutsideTouchable = false
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            elevation = dp(8).toFloat()
+        }
+        selPopup = popup
+
+        // 下划线没有对应的 XML 属性（TextView 的 styleable 里没有 paintFlags），只能在代码里设
+        bar.selUnderline.paintFlags = bar.selUnderline.paintFlags or Paint.UNDERLINE_TEXT_FLAG
+
+        bar.selBold.setOnClickListener { exec("bold") }
+        bar.selItalic.setOnClickListener { exec("italic") }
+        bar.selUnderline.setOnClickListener { exec("underline") }
+        bar.selSelectAll.setOnClickListener { evalRich("document.execCommand('selectAll');refreshState();") }
+        bar.selCopy.setOnClickListener { copySelection(cut = false) }
+        bar.selCut.setOnClickListener { copySelection(cut = true) }
+        bar.selMore.setOnClickListener {
+            // 打开格式面板；面板长高会让正文变矮，随后的布局回调会再判一次锚定
+            togglePanel(binding.panelFormat, binding.btnPanelFormat)
+            dismissSelectionBar()
+        }
+    }
+
+    /**
+     * 浮条的可见性与坐标。选区折叠（只有光标）时立刻收起 —— 此时该由系统的
+     * insertion 模式接管（粘贴气泡），两套并存只会互相打架。
+     */
+    private fun updateSelectionBar() {
+        val popup = selPopup ?: return
+        if (isFinishing || isDestroyed) return
+        val rect = selRect
+        if (noteType != Project.TYPE_TEXT || rect == null || rect.collapsed) {
+            dismissSelectionBar()
+            return
+        }
+        val barRoot = selBar?.root ?: return
+        if (barRoot.width == 0 || barRoot.height == 0) {
+            barRoot.measure(
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+        }
+        val barW = barRoot.measuredWidth
+        val barH = barRoot.measuredHeight
+
+        val rootLoc = IntArray(2).also { binding.root.getLocationOnScreen(it) }
+        val webLoc = IntArray(2).also { binding.richWeb.getLocationOnScreen(it) }
+        val left = rootLoc[0] + rootPad[0]
+        val top = rootLoc[1] + rootPad[1]
+        val right = rootLoc[0] + binding.root.width - rootPad[2]
+        val bottom = rootLoc[1] + binding.root.height - rootPad[3]
+
+        val selTop = webLoc[1] + rect.top
+        val selBottom = selTop + rect.height
+        val selCenterX = (webLoc[0] + rect.left + rect.width / 2).toFloat()
+
+        // 优先贴选区上方；上方放不下翻到下方；再放不下夹进可用区。
+        var y = selTop - barH - dp(8)
+        if (y < top) y = selBottom + dp(8)
+        // 浮条不能压在底部工具栏上：工具栏顶部就是可用区的下边界
+        val dockTop = currentDockTop()
+        val limitBottom = minOf(bottom, dockTop) - dp(8)
+        if (limitBottom - barH < top) {
+            dismissSelectionBar()
+            return
+        }
+        y = y.coerceIn(top, limitBottom - barH)
+        var x = (selCenterX - barW / 2f).toInt()
+        x = x.coerceIn(left, maxOf(left, right - barW))
+
+        syncSelectionBarState()
+        if (popup.isShowing) popup.update(x, y, -1, -1)
+        else popup.showAtLocation(binding.root, Gravity.TOP or Gravity.START, x, y)
+        selBarDismissed = false
+        // 浮条在场就轮不到系统的菜单，两边都出剪切/复制只会互相打架
+        binding.richWeb.suppressSelectionActionMode = true
+    }
+
+    /** 只同步 B/I/U 的选中态，不动坐标。撤销重做等不改选区坐标的操作也走这里。 */
+    private fun syncSelectionBarState() {
+        val bar = selBar ?: return
+        if (selBarDismissed) return
+        val st = try {
+            JSONObject(richStatesJson ?: "{}")
+        } catch (e: Exception) {
+            JSONObject()
+        }
+        bar.selBold.isSelected = st.optBoolean("b")
+        bar.selItalic.isSelected = st.optBoolean("i")
+        bar.selUnderline.isSelected = st.optBoolean("u")
+    }
+
+    private fun dismissSelectionBar() {
+        binding.richWeb.suppressSelectionActionMode = false
+        val popup = selPopup ?: return
+        if (selBarDismissed) return
+        selBarDismissed = true
+        if (popup.isShowing) popup.dismiss()
+    }
+
+    /** 底部工具栏当前占用的顶部 y 坐标；没显示时不限制。 */
+    private fun currentDockTop(): Int {
+        val dock = dockingToolbar()
+        if (dock.visibility != View.VISIBLE || dock.height == 0) return Int.MAX_VALUE
+        val loc = IntArray(2)
+        dock.getLocationOnScreen(loc)
+        return loc[1]
+    }
+
+    /** 轻提示的下边界：有工具栏就贴在它上方，没有就贴在内容区底部。 */
+    private fun tipBottomLimit(): Int {
+        val dockTop = currentDockTop()
+        if (dockTop != Int.MAX_VALUE) return dockTop
+        val loc = IntArray(2)
+        binding.root.getLocationOnScreen(loc)
+        return loc[1] + binding.root.height - rootPad[3]
+    }
+
+    private fun evalRich(js: String) {
+        if (isFinishing || isDestroyed || noteType != Project.TYPE_TEXT) return
+        binding.richWeb.evaluateJavascript(js, null)
+    }
+
+    /**
+     * 选区的剪切 / 复制。
+     *
+     * 不走 `document.execCommand('copy')` —— 那要求「激活的用户手势」，而我们是从
+     * 原生按钮经 evaluateJavascript 异步进到 JS 的，手势早已过期，浏览器会直接拒掉。
+     * 改为先在 JS 里取出选区的富文本，再由原生写进系统剪贴板。
+     */
+    private fun copySelection(cut: Boolean) {
+        if (isFinishing || isDestroyed || noteType != Project.TYPE_TEXT) return
+        val js = buildString {
+            if (cut) append("var p=_sp();document.execCommand('delete');refreshState();")
+            else append("var p=_sp();")
+            append("p;")
+        }
+        binding.richWeb.evaluateJavascript(js) { raw ->
+            if (isFinishing || isDestroyed) return@evaluateJavascript
+            val json = parseJsString(raw) ?: return@evaluateJavascript
+            val payload = try {
+                JSONObject(json)
+            } catch (e: Exception) {
+                return@evaluateJavascript
+            }
+            val text = payload.optString("t")
+            if (text.isEmpty()) return@evaluateJavascript
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            cm.setPrimaryClip(ClipData.newHtmlText(getString(R.string.app_name), text, payload.optString("h")))
+            toast(if (cut) R.string.sb_cut_done else R.string.sb_copied)
+            if (cut) dismissSelectionBar()
+        }
+    }
+
+    /**
+     * 面板开合会从底部吃掉正文一块高度，光标原本待着的那一行就可能被挤出视口。
+     * 这里在安全区（视口底部减去面板高度、再留 48dp 呼吸位）之外把内容往上顶，
+     * 让选区始终落在视口上段。
+     *
+     * `isFinishing/isDestroyed` 守卫放在入口而不是调用点：所有触发路径
+     * （布局回调、桥回调、post 出去的任务）都可能跑在销毁之后。
+     */
+    private fun evaluateAnchor() {
+        if (isFinishing || isDestroyed) return
+        if (noteType != Project.TYPE_TEXT) return
+        val rect = selRect ?: return
+        val web = binding.richWeb
+        val h = web.height
+        if (h <= 0) return
+        val bottomMargin = if (visiblePanelHeight() > 0) dp(48) else 0
+        val safeBottom = h - bottomMargin
+        val selBottom = rect.top + rect.height
+        if (selBottom <= safeBottom) {
+            anchorArmed = true
+            return
+        }
+        if (!anchorArmed) return
+        anchorArmed = false
+        selScrollTo(web.scrollY + (selBottom - (safeBottom - dp(8))))
+    }
+
+    /** 平滑滚动到目标 scrollY；中途来了新指令就取消上一条，避免两条动画打架。 */
+    private fun selScrollTo(targetY: Int) {
+        val web = binding.richWeb
+        val from = web.scrollY
+        val to = targetY.coerceAtLeast(0)
+        if (from == to) {
+            anchorArmed = true
+            return
+        }
+        selScrollAnimator?.cancel()
+        selScrollAnimator = ValueAnimator.ofInt(from, to).apply {
+            duration = 180
+            interpolator = DecelerateInterpolator()
+            addUpdateListener {
+                if (isFinishing || isDestroyed) return@addUpdateListener
+                web.scrollTo(web.scrollX, it.animatedValue as Int)
+            }
+            start()
+        }
+    }
+
+    /** 当前展开着的二级面板高度；没有面板时返回 0，遮挡带随之消失。 */
+    private fun visiblePanelHeight(): Int {
+        val panel = when {
+            binding.panelStyle.visibility == View.VISIBLE -> binding.panelStyle
+            binding.panelFormat.visibility == View.VISIBLE -> binding.panelFormat
+            binding.panelCode.visibility == View.VISIBLE -> binding.panelCode
+            else -> return 0
+        }
+        return panel.height
+    }
+
+    /** 收起全部二级面板并复位它们的触发按钮选中态。 */
+    private fun closePanels() {
+        var changed = false
+        listOf(binding.panelStyle to binding.btnPanelStyle,
+            binding.panelFormat to binding.btnPanelFormat,
+            binding.panelCode to binding.btnMoreCode).forEach { (panel, trigger) ->
+            if (panel.visibility == View.VISIBLE) {
+                panel.visibility = View.GONE
+                trigger.isSelected = false
+                changed = true
+            }
+        }
+        // 面板高度归零后正文会立刻长回去，等这一轮布局落定再判一次锚定
+        if (changed) binding.root.post { evaluateAnchor() }
     }
 
     /** 光标处真实格式 → 底部工具栏与二级面板选中态实时同步。 */
@@ -843,6 +1372,9 @@ class EditorActivity : AppCompatActivity() {
      */
     private fun collectContent(onDone: (String?) -> Unit) {
         if (noteType == Project.TYPE_TEXT) {
+            // 优先用 JS 回传的快照：它同步可取，不会像 evaluateJavascript 那样
+            // 被 WebView 的销毁抢在前面（onPause 保存时正是这种情况）。
+            richCache?.let { onDone(it); return }
             if (!richReady) {
                 onDone(null)
                 return
@@ -949,6 +1481,17 @@ class EditorActivity : AppCompatActivity() {
             dialog.dismiss()
             showAddMenu()
         }
+        sheet.itemCopy.setOnClickListener {
+            dialog.dismiss()
+            collectContent { content ->
+                if (content != null) {
+                    val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    val text = if (noteType == Project.TYPE_TEXT) htmlToPlain(content) else content
+                    cm.setPrimaryClip(ClipData.newPlainText("note", text))
+                    toast(R.string.copied)
+                }
+            }
+        }
         sheet.itemShare.setOnClickListener {
             dialog.dismiss()
             shareNote()
@@ -989,7 +1532,7 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun confirmDelete() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(R.string.delete_title)
             .setMessage(getString(R.string.delete_message, binding.edTitle.text.ifBlank { defaultTitle() }))
             .setPositiveButton(R.string.delete) { _, _ ->
@@ -1038,19 +1581,12 @@ class EditorActivity : AppCompatActivity() {
     /**
      * 切换悬浮工具栏的形态。
      * 键盘收起时收成一个小胶囊，几乎不挡正文，方便阅读；键盘弹出时展开成完整工具条，
-     * 此时它在键盘正上方、正文也已经让位，展开不会遮挡内容。
+     * 停在键盘正上方。
      */
     private fun updateDockMode(expanded: Boolean) {
         val isText = noteType == Project.TYPE_TEXT
-        // 胶囊态要摘掉外层容器的磨砂背景：否则屏幕上会同时出现「一条贯穿屏幕的白底」和
-        // 其内居中的胶囊，两层轮廓叠在一起。展开态再挂回去。
-        val dock = if (isText) binding.toolbarText else binding.toolbarCode
-        dock.background = if (expanded) {
-            ContextCompat.getDrawable(this, R.drawable.bg_toolbar_dock)
-        } else {
-            null
-        }
-
+        // 背景与阴影挂在胶囊/完整条自己身上，父容器不挂任何背景：
+        // 这里只切形态，不再换父容器背景，展开时就不会整条磨砂条「啪」地出现
         if (isText) {
             binding.capsuleText.visibility = if (expanded) View.GONE else View.VISIBLE
             binding.fullText.visibility = if (expanded) View.VISIBLE else View.GONE
@@ -1059,7 +1595,13 @@ class EditorActivity : AppCompatActivity() {
             binding.fullCode.visibility = if (expanded) View.VISIBLE else View.GONE
         }
         // 形态切换由工具栏容器的 LayoutTransition 播放过渡（胶囊↔完整条渐变上浮/回落）
+        // 工具栏高度变了，浮条的下边界跟着变
+        updateSelectionBar()
     }
+
+    /** 当前形态对应的悬浮工具栏容器（文字便签 / HTML 便签各一个）。 */
+    private fun dockingToolbar(): View =
+        if (noteType == Project.TYPE_TEXT) binding.toolbarText else binding.toolbarCode
 
     /** 收起软键盘；工具栏会随键盘收起自动收回胶囊态。 */
     private fun hideKeyboard() {

@@ -10,12 +10,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.doAfterTextChanged
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.htmlnotes.app.databinding.ActivityMainBinding
 import java.nio.charset.Charset
 
 /** 搜索框输入防抖窗口：连续输入时只跑最后一次过滤。 */
 private const val SEARCH_DEBOUNCE_MS = 300L
+
+/** 列表滚动多少像素才判定为「有意滚动」，避免手指微抖时 FAB 反复收放。 */
+private const val FAB_SCROLL_THRESHOLD = 6
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,25 +31,48 @@ class MainActivity : AppCompatActivity() {
     private var isGrid: Boolean = true
     private var lastThemeColor = ThemeHelper.DEFAULT
     private val searchHandler = Handler(Looper.getMainLooper())
+
+    /**
+     * CursorKeeper 的注销函数。退出搜索态时调用（此后光标不再被自动清除），
+     * onDestroy 也要兜底调一次 —— 否则它注册的全局布局监听会一直留到 Activity 销毁。
+     */
+    private var cursorKeeperDetach: (() -> Unit)? = null
     private val searchTask = Runnable { applyFilter() }
     /** 便签目录扫描 + JSON 解析在后台线程进行，期间合并多余的刷新请求。 */
     private var loading = false
     private var pendingRefresh = false
     /** 首次后台载入完成前不显示空列表提示，避免冷启动闪现「暂无便签」。 */
     private var loadedOnce = false
+    /** FAB 当前是否处于收起态（随列表滚动让位）。 */
+    private var fabHidden = false
 
     private val importLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             if (uri != null) {
-                val text = contentResolver.openInputStream(uri)
-                    ?.bufferedReader(Charset.forName("UTF-8"))
-                    ?.use { it.readText() }
-                if (!text.isNullOrEmpty()) {
-                    store.create(getString(R.string.imported_note), text)
-                    refresh()
+                val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                if (bytes != null && bytes.isNotEmpty()) {
+                    val rawText = decodeText(bytes)
+                    if (rawText.isNotBlank()) {
+                        val isHtml = looksLikeHtml(rawText)
+                        val noteType = if (isHtml) Project.TYPE_HTML else Project.TYPE_TEXT
+                        val extracted = if (isHtml) extractTitle(rawText) else null
+                        val title = extracted ?: getString(R.string.imported_note)
+                        store.create(title, rawText, noteType)
+                        refresh()
+                    }
                 }
             }
         }
+
+    /** 编码自动识别：优先 UTF-8，遇到乱码字符则回退到 GBK（兼容旧版 Windows 导出的 HTML 文件） */
+    private fun decodeText(bytes: ByteArray): String {
+        return try {
+            val utf8 = String(bytes, Charsets.UTF_8)
+            if (!utf8.contains('\uFFFD')) utf8 else String(bytes, Charset.forName("GBK"))
+        } catch (e: Exception) {
+            String(bytes, Charset.defaultCharset())
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,9 +99,28 @@ class MainActivity : AppCompatActivity() {
         }
         binding.recycler.layoutManager = GridLayoutManager(this, if (isGrid) 2 else 1)
         binding.recycler.adapter = adapter
+        // 条目增删/移动的过渡时长略放长，配合 DiffUtil 的增量更新更顺滑
+        binding.recycler.itemAnimator = DefaultItemAnimator().apply {
+            addDuration = 200
+            removeDuration = 180
+            moveDuration = 220
+            changeDuration = 160
+        }
+        // FAB 随列表滚动让位：下滑收起、上滑或回到顶部展开
+        binding.recycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                when {
+                    dy > FAB_SCROLL_THRESHOLD -> setFabHidden(true)
+                    dy < -FAB_SCROLL_THRESHOLD -> setFabHidden(false)
+                    !rv.canScrollVertically(-1) -> setFabHidden(false)
+                }
+            }
+        })
 
         binding.fabNew.setOnClickListener { showTypeChooser() }
         binding.btnEmptyCreate.setOnClickListener { showTypeChooser() }
+        binding.fabNew.attachPressScale(0.92f, 100L)
+        binding.btnEmptyCreate.attachPressScale(0.95f, 100L)
         binding.searchEdit.doAfterTextChanged {
             searchHandler.removeCallbacks(searchTask)
             searchHandler.postDelayed(searchTask, SEARCH_DEBOUNCE_MS)
@@ -96,6 +143,7 @@ class MainActivity : AppCompatActivity() {
 
         // 返回键：搜索框聚焦时先退出搜索态（清空搜索词、收起键盘），再次按返回退出应用
         val forgetSearch = CursorKeeper.attach(this, binding.searchEdit)
+        cursorKeeperDetach = forgetSearch
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (binding.searchEdit.hasFocus()) {
@@ -193,11 +241,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
         adapter.submit(filtered)
-        binding.emptyLayout.visibility =
-            if (allItems.isEmpty() && loadedOnce) android.view.View.VISIBLE else android.view.View.GONE
-        binding.noResult.visibility =
-            if (allItems.isNotEmpty() && filtered.isEmpty()) android.view.View.VISIBLE
-            else android.view.View.GONE
+        binding.emptyLayout.fadeVisibility(allItems.isEmpty() && loadedOnce)
+        binding.noResult.fadeVisibility(allItems.isNotEmpty() && filtered.isEmpty())
+        // 内容被删到不足以滚动时列表会被拉回顶部，此时务必让 FAB 重新可见
+        binding.recycler.post {
+            if (!binding.recycler.canScrollVertically(-1)) setFabHidden(false)
+        }
+    }
+
+    /** 收起 / 展开新建按钮：收起时同时禁用点击，避免点到看不见的按钮。 */
+    private fun setFabHidden(hidden: Boolean) {
+        if (fabHidden == hidden) return
+        fabHidden = hidden
+        binding.fabNew.isClickable = !hidden
+        binding.fabNew.animate()
+            .alpha(if (hidden) 0f else 1f)
+            .scaleX(if (hidden) 0.6f else 1f)
+            .scaleY(if (hidden) 0.6f else 1f)
+            .setDuration(180)
+            .start()
     }
 
     /** 切换列表 / 双列网格视图，并记住用户偏好。 */
@@ -274,7 +336,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun confirmDelete(p: Project) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
             .setTitle(R.string.delete_title)
             .setMessage(getString(R.string.delete_message, p.title))
             .setPositiveButton(R.string.delete) { _, _ ->

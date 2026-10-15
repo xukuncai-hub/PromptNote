@@ -33,6 +33,9 @@ internal val H1_TAG_REGEX = Regex("(?is)<h1\\b[^>]*>(.*?)</h1\\s*>")
 /** 第一个 <h2> 标签内容。 */
 internal val H2_TAG_REGEX = Regex("(?is)<h2\\b[^>]*>(.*?)</h2\\s*>")
 
+/** 第一个 <h3> 标签内容。 */
+internal val H3_TAG_REGEX = Regex("(?is)<h3\\b[^>]*>(.*?)</h3\\s*>")
+
 /** 粗略判断内容是否包含 HTML 标签。 */
 internal fun looksLikeHtml(s: String): Boolean = HTML_LIKE_REGEX.containsMatchIn(s)
 
@@ -70,6 +73,7 @@ internal fun extractTitle(html: String): String? {
     val raw = TITLE_TAG_REGEX.find(html)?.groupValues?.get(1)
         ?: H1_TAG_REGEX.find(html)?.groupValues?.get(1)
         ?: H2_TAG_REGEX.find(html)?.groupValues?.get(1)
+        ?: H3_TAG_REGEX.find(html)?.groupValues?.get(1)
     if (raw != null) {
         val t = stripHtml(raw)
         if (t.isNotBlank()) return t.take(24)

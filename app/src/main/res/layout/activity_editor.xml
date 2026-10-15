@@ -82,7 +82,7 @@
             android:paddingHorizontal="16dp"
             android:text="@string/done"
             android:textColor="?attr/colorPrimary"
-            android:textSize="15sp"
+            android:textSize="16sp"
             android:textStyle="bold" />
     </LinearLayout>
 
@@ -135,8 +135,9 @@
         android:paddingBottom="8dp"
         android:textColor="?attr/colorOnSurface"
         android:textColorHint="?attr/colorOnSurfaceVariant"
-        android:textCursorDrawable="@drawable/cursor_yellow"
-        android:textSize="22sp"
+        android:textCursorDrawable="@drawable/text_cursor"
+        android:fontFamily="serif"
+        android:textSize="24sp"
         android:textStyle="bold" />
 
     <!-- ============ 4. 正文编辑区 + 底部工具栏（纵向布局：正文在上、工具栏在下，工具栏不覆盖正文） ============ -->
@@ -146,8 +147,8 @@
         android:layout_weight="1"
         android:orientation="vertical">
 
-        <!-- 正文：文字便签（富文本所见即所得） -->
-        <WebView
+        <!-- 正文：文字便签（富文本所见即所得）。子类用于在浮条接管时挡掉系统选择菜单 -->
+        <com.htmlnotes.app.SelectableWebView
             android:id="@+id/richWeb"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -173,7 +174,7 @@
             android:scrollbars="vertical"
             android:textColor="?attr/colorOnSurface"
             android:textColorHint="?attr/colorOnSurfaceVariant"
-            android:textCursorDrawable="@drawable/cursor_yellow"
+            android:textCursorDrawable="@drawable/text_cursor"
             android:textSize="16sp"
             android:typeface="monospace"
             android:visibility="gone" />
@@ -189,11 +190,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="10dp"
             android:layout_marginBottom="10dp"
-            android:background="@drawable/bg_toolbar_dock"
-            android:elevation="6dp"
-            android:orientation="vertical"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp">
+            android:orientation="vertical">
 
             <!--
               胶囊态：键盘收起时工具栏只留一个小圆角入口，避免整条悬浮栏压住正文。
@@ -225,7 +222,11 @@
                 android:id="@+id/fullText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:background="@drawable/bg_toolbar_dock"
+                android:elevation="6dp"
+                android:orientation="vertical"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp">
 
             <!-- 一级：字符样式 + 段落面板 + 格式面板 -->
             <HorizontalScrollView
@@ -280,20 +281,50 @@
                         android:background="?attr/colorOutlineVariant" />
 
                     <!-- 段落：标题层级 / 对齐 / 列表 / 引用 / 缩进 -->
-                    <ImageButton
+                    <LinearLayout
                         android:id="@+id/btnPanelStyle"
-                        style="@style/Widget.HtmlNotes.Tool.Icon40"
-                        android:contentDescription="@string/panel_paragraph"
-                        android:src="@drawable/ic_paragraph" />
+                        style="@style/Widget.HtmlNotes.Tool.LabelChip"
+                        android:contentDescription="@string/panel_paragraph">
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_paragraph"
+                            app:tint="@color/tool_btn_tint" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="@string/panel_paragraph"
+                            android:textColor="@color/tool_btn_text"
+                            android:textSize="14sp" />
+                    </LinearLayout>
 
                     <!-- 格式：字号 / 颜色 / 高亮 / 字体 / 行内代码 / 链接 / 图片 / 清除 -->
-                    <TextView
+                    <LinearLayout
                         android:id="@+id/btnPanelFormat"
-                        style="@style/Widget.HtmlNotes.Tool.Square"
-                        android:contentDescription="@string/panel_format"
-                        android:text="Aa"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                        style="@style/Widget.HtmlNotes.Tool.LabelChip"
+                        android:layout_marginStart="4dp"
+                        android:contentDescription="@string/panel_format">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Aa"
+                            android:textColor="@color/tool_btn_text"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="@string/panel_format"
+                            android:textColor="@color/tool_btn_text"
+                            android:textSize="14sp" />
+                    </LinearLayout>
                 </LinearLayout>
             </HorizontalScrollView>
 
@@ -326,7 +357,7 @@
                             android:layout_marginEnd="4dp"
                             android:contentDescription="@string/rich_h1"
                             android:text="@string/seg_title"
-                            android:textSize="13.5sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -335,7 +366,7 @@
                             android:layout_marginEnd="4dp"
                             android:contentDescription="@string/rich_h2"
                             android:text="@string/seg_subtitle"
-                            android:textSize="13.5sp" />
+                            android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/segHeading"
@@ -343,7 +374,7 @@
                             android:layout_marginEnd="4dp"
                             android:contentDescription="@string/rich_h3"
                             android:text="@string/seg_heading"
-                            android:textSize="13.5sp" />
+                            android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/segBody"
@@ -351,14 +382,14 @@
                             android:layout_marginEnd="4dp"
                             android:contentDescription="@string/seg_body"
                             android:text="@string/seg_body"
-                            android:textSize="13.5sp" />
+                            android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/segCaption"
                             style="@style/Widget.HtmlNotes.Tool.Chip"
                             android:contentDescription="@string/seg_caption"
                             android:text="@string/seg_caption"
-                            android:textSize="13.5sp" />
+                            android:textSize="14sp" />
                     </LinearLayout>
                 </HorizontalScrollView>
 
@@ -414,6 +445,13 @@
                             android:src="@drawable/ic_list_ol" />
 
                         <ImageButton
+                            android:id="@+id/btnTodo"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="@string/todo_menu"
+                            android:src="@drawable/ic_plus" />
+
+                        <ImageButton
                             android:id="@+id/btnQuote"
                             style="@style/Widget.HtmlNotes.Tool.Icon36"
                             android:layout_marginEnd="4dp"
@@ -465,7 +503,7 @@
                             android:layout_marginEnd="4dp"
                             android:contentDescription="@string/font_size"
                             android:text="Aa"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:textStyle="bold" />
 
                         <TextView
@@ -495,7 +533,7 @@
                             android:layout_marginEnd="4dp"
                             android:contentDescription="@string/font_system"
                             android:text="@string/font_system"
-                            android:textSize="12.5sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </HorizontalScrollView>
 
@@ -565,11 +603,7 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="10dp"
             android:layout_marginBottom="10dp"
-            android:background="@drawable/bg_toolbar_dock"
-            android:elevation="6dp"
             android:orientation="vertical"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
             android:visibility="gone">
 
             <!-- 胶囊态：键盘收起时只留编辑入口，避免悬浮栏压住代码 -->
@@ -599,7 +633,11 @@
                 android:id="@+id/fullCode"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:background="@drawable/bg_toolbar_dock"
+                android:elevation="6dp"
+                android:orientation="vertical"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp">
 
             <HorizontalScrollView
                 android:layout_width="match_parent"

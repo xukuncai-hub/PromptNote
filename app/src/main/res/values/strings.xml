@@ -101,30 +101,21 @@
     <string name="rich_undo">撤销</string>
     <string name="rich_redo">重做</string>
     <string name="rich_clear">清除格式</string>
-    <string name="panel_paragraph">段落格式</string>
-    <string name="panel_format">文字格式</string>
+    <string name="panel_paragraph">段落</string>
+    <string name="panel_format">格式</string>
     <string name="edit_content">编辑</string>
 
-    <!-- 工具栏操作反馈（轻量 toast） -->
-    <string name="toast_bold">已加粗</string>
-    <string name="toast_italic">已斜体</string>
-    <string name="toast_underline">已下划线</string>
-    <string name="toast_strike">已删除线</string>
-    <string name="toast_align">已对齐</string>
-    <string name="toast_undo">已撤销</string>
-    <string name="toast_redo">已重做</string>
+    <!-- 工具栏操作反馈（只保留结果不可见的操作；行内样式靠按钮高亮与正文本身反馈，不弹提示） -->
     <string name="toast_indent">已缩进</string>
     <string name="toast_outdent">已减少缩进</string>
     <string name="toast_format">已格式化代码</string>
     <string name="toast_cleared">已清空代码</string>
     <string name="toast_clear_confirm">确定要清空全部代码吗？</string>
-    <string name="toast_highlight">已高亮所选文字</string>
     <string name="toast_color">文字颜色已应用</string>
     <string name="toast_size">字号已设为 %1$d</string>
     <string name="toast_link">已插入链接</string>
     <string name="toast_image">已插入图片</string>
     <string name="toast_hr">已插入分割线</string>
-    <string name="toast_font">字体已切换</string>
 
     <!-- 代码模式编码工具栏 -->
     <string name="code_indent">缩进</string>
@@ -151,12 +142,12 @@
     <string name="theme_light">浅色</string>
     <string name="theme_dark">深色</string>
     <string name="settings_theme_color">主题色</string>
-    <string name="theme_color_indigo">靛蓝</string>
+    <string name="theme_color_indigo">紫罗兰</string>
     <string name="theme_color_teal">青绿</string>
     <string name="theme_color_coral">珊瑚</string>
     <string name="theme_color_orange">橙</string>
     <string name="theme_color_rose">玫瑰</string>
-    <string name="theme_color_violet">紫罗兰</string>
+    <string name="theme_color_violet">亮紫</string>
     <string name="theme_color_sky">天蓝</string>
     <string name="theme_color_forest">森绿</string>
     <string name="settings_default_view">默认视图</string>
@@ -180,4 +171,18 @@
     <string name="action_back">返回</string>
     <string name="empty_page">（空白页面）</string>
     <string name="imported_note">导入的笔记</string>
+
+    <!-- 选区浮条 -->
+    <string name="sb_b">B</string>
+    <string name="sb_i">I</string>
+    <string name="sb_u">U</string>
+    <string name="sb_cut">剪切</string>
+    <string name="sb_copy">复制</string>
+    <string name="sb_select_all">全选</string>
+    <string name="sb_copied">已复制</string>
+    <string name="sb_cut_done">已剪切</string>
+
+    <!-- 编辑器内轻提示 -->
+    <string name="tip_undone">已撤销</string>
+    <string name="tip_redone">已重做</string>
 </resources>

@@ -19,9 +19,29 @@
         <item name="colorError">@color/md_error</item>
         <item name="android:windowBackground">@color/md_surface</item>
         <item name="android:windowLightStatusBar">false</item>
+
+        <!-- M3 其余色阶：与浅色同一套，值来自 values-night/colors.xml -->
+        <item name="colorTertiary">@color/md_tertiary</item>
+        <item name="colorOnTertiary">@color/md_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/md_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/md_on_tertiary_container</item>
+        <item name="colorOnError">@color/md_on_error</item>
+        <item name="colorErrorContainer">@color/md_error_container</item>
+        <item name="colorOnErrorContainer">@color/md_on_error_container</item>
+        <item name="colorSurfaceInverse">@color/md_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/md_inverse_on_surface</item>
+        <item name="colorSurfaceContainerLowest">@color/md_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/md_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/md_surface_container</item>
+        <item name="colorSurfaceContainerHighest">@color/md_surface_container_highest</item>
+
+        <!-- 输入框选区手柄 / 光标跟随主题色（换肤后同样生效） -->
+        <item name="colorControlActivated">?attr/colorPrimary</item>
     </style>
 
     <style name="TextAppearance.HtmlNotes.ToolbarTitle" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">serif</item>
         <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.01</item>
     </style>
 </resources>

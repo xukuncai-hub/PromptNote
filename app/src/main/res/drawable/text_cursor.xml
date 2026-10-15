@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 编辑器光标：2dp 细竖线，颜色跟随主题色（换肤后同步变化）。
+     光标高度由系统按文字字号自动决定，不写死。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <size android:width="2dp" />
+    <solid android:color="?attr/colorPrimary" />
+</shape>

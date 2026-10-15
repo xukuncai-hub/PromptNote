@@ -23,20 +23,22 @@ object CursorKeeper {
 
         val content = activity.findViewById<View>(android.R.id.content)
         var keyboardVisible = false
-        var listener: ViewTreeObserver.OnGlobalLayoutListener? = null
+        var pending: Runnable? = null
 
-        listener = ViewTreeObserver.OnGlobalLayoutListener {
+        val listener = ViewTreeObserver.OnGlobalLayoutListener {
             val nowVisible = isKeyboardVisible(content)
             if (keyboardVisible && !nowVisible) {
                 // 键盘刚收起：等系统稳定后，若输入框仍持有焦点则清除，让光标消失
                 val target = last
                 if (target != null) {
-                    content.postDelayed({
+                    val task = Runnable {
                         // 若收起后键盘又弹回（如切换输入框），则不打断
                         if (target.hasFocus() && !isKeyboardVisible(content)) {
                             hideCursor(target)
                         }
-                    }, 120)
+                    }
+                    pending = task
+                    content.postDelayed(task, 120)
                 }
             }
             keyboardVisible = nowVisible
@@ -45,7 +47,13 @@ object CursorKeeper {
 
         return {
             last = null
-            listener?.let { content.viewTreeObserver.removeOnGlobalLayoutListener(it) }
+            // 还没跑的延迟任务必须先撤掉：hideCursor 会对 WebView 调
+            // evaluateJavascript，而调用方（EditorActivity.onDestroy）紧接着
+            // 就会 destroy 掉那个 WebView。
+            pending?.let { content.removeCallbacks(it) }
+            pending = null
+            val vto = content.viewTreeObserver
+            if (vto.isAlive) vto.removeOnGlobalLayoutListener(listener)
         }
     }
 

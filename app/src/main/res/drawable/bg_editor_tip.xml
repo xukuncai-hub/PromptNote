@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  轻提示胶囊。  走 colorSurfaceInverse / colorOnSurfaceInverse 这一对反相 token：
+  亮色主题下自动是深底白字、夜间自动是浅底深字，因此只需一份资源，不用再出 night 变体。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorSurfaceInverse" />
+    <corners android:radius="8dp" />
+</shape>

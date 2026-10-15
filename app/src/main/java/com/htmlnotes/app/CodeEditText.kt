@@ -126,8 +126,10 @@ class CodeEditText @JvmOverloads constructor(
             if (!canCoalesce) {
                 undoStack.addLast(Snapshot(s.toString(), selectionStart, selectionEnd))
                 if (undoStack.size > MAX_HISTORY) undoStack.removeFirst()
-                redoStack.clear()
             }
+            // 任何新编辑都会让「重做」分支作废，合并输入那条路同样要清：
+            // 否则撤销之后紧接着输入，重做会恢复到一个与新内容无关的旧快照。
+            redoStack.clear()
             lastChangeAt = now
             lastRecordSimple = simpleEdit
             onHistoryChanged?.invoke()
@@ -288,6 +290,36 @@ class CodeEditText @JvmOverloads constructor(
         return l.getLineForOffset(pos)
     }
 
+    /** 括号 / 符号自动配对判断 */
+    private fun matchPair(ch: Char): Char? = when (ch) {
+        '{' -> '}'
+        '(' -> ')'
+        '[' -> ']'
+        '"' -> '"'
+        '\'' -> '\''
+        else -> null
+    }
+
+    /** 自动配对补全：选区折叠时插入符号对并将光标置于中间；有选区时包裹选区文本 */
+    private fun handleAutoPair(open: Char, close: Char): Boolean {
+        val s = text ?: return false
+        val start = selectionStart
+        val end = selectionEnd
+        if (start < 0) return false
+
+        if (start != end) {
+            val selText = s.subSequence(start, end).toString()
+            val wrapped = "$open$selText$close"
+            s.replace(start, end, wrapped)
+            setSelection(start + 1, end + 1)
+            return true
+        } else {
+            s.insert(start, "$open$close")
+            setSelection(start + 1)
+            return true
+        }
+    }
+
     // ---------------- 键盘输入：软键盘走 InputConnection，硬键盘走 onKeyDown ----------------
 
     override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
@@ -301,6 +333,13 @@ class CodeEditText @JvmOverloads constructor(
                 if (text == "\t") {
                     handleTab(false)
                     return true
+                }
+                if (text?.length == 1) {
+                    val ch = text[0]
+                    val pair = matchPair(ch)
+                    if (pair != null && handleAutoPair(ch, pair)) {
+                        return true
+                    }
                 }
                 return super.commitText(text, newCursorPosition)
             }

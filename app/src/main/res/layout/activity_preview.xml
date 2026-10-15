@@ -11,13 +11,19 @@
         android:layout_height="wrap_content"
         android:minHeight="?attr/actionBarSize"
         android:background="?attr/colorSurface"
-        app:elevation="1dp"
+        app:elevation="0dp"
         app:itemIconTint="?attr/colorOnSurfaceVariant"
         app:navigationContentDescription="@string/action_back"
         app:navigationIcon="@drawable/ic_back"
         app:navigationIconTint="?attr/colorOnSurfaceVariant"
         app:titleTextAppearance="@style/TextAppearance.HtmlNotes.ToolbarTitle"
         app:titleTextColor="?attr/colorOnSurface" />
+
+    <!-- 发丝分隔线：与编辑器顶栏同一套分层方式（阴影在 WebView 内容上方会显脏） -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="?attr/colorOutlineVariant" />
 
     <FrameLayout
         android:id="@+id/webContainer"
@@ -43,13 +49,24 @@
             android:padding="32dp"
             android:visibility="gone">
 
+            <!-- 纯装饰插画，紧随其后的标题已表达同样含义 -->
+            <ImageView
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:alpha="0.35"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_info"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
             <TextView
                 android:id="@+id/errorTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:text="@string/preview_load_failed"
+                android:fontFamily="serif"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="17sp"
+                android:textSize="20sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -61,7 +78,7 @@
                 android:maxWidth="520dp"
                 android:text="@string/preview_load_failed_hint"
                 android:textColor="?attr/colorOnSurfaceVariant"
-                android:textSize="13sp" />
+                android:textSize="14sp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnRetry"

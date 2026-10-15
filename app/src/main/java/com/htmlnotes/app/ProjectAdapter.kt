@@ -48,17 +48,24 @@ class ProjectAdapter(
         b.snippet.text = snippet
         b.date.text = dateFormat.format(Date(p.updatedAt))
 
+        // 笔记类型徽章
+        b.typeTag.text = context.getString(
+            if (p.type == Project.TYPE_TEXT) R.string.text_note else R.string.html_note
+        )
+
         // 把标题 / 类型 / 置顶 / 摘要合并成一条描述，避免 TalkBack 逐个念读零散子视图
         b.root.contentDescription = buildString {
             append(b.title.text)
-            append('，').append(
-                context.getString(if (p.type == Project.TYPE_TEXT) R.string.text_note else R.string.html_note)
-            )
+            append('，').append(b.typeTag.text)
             if (p.pinned) append('，').append(context.getString(R.string.a11y_pinned))
             if (snippet.isNotBlank() && snippet != BLANK_SNIPPET) append('，').append(snippet)
         }
         // 每张卡片的编辑按钮都叫「编辑便签」的话无法区分，带上标题
         b.btnEdit.contentDescription = context.getString(R.string.edit_note_named, b.title.text)
+
+        // 微动画：卡片与编辑按钮触摸反馈
+        b.root.attachPressScale(0.97f, 90L)
+        b.btnEdit.attachPressScale(0.85f, 90L)
 
         // 过渡动画源视图统一用整张卡片：编辑按钮太小，从它展开视觉上不连贯
         b.root.setOnClickListener { onAction(p, Action.OPEN, b.root) }

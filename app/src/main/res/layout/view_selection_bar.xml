@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  选区浮条：选中文字时贴着选区出现，替代系统的文字选择菜单。
+
+  以 PopupWindow 挂载而不是塞进 activity_editor.xml —— 它必须能浮在正文之上
+  的任意 y 坐标，放布局里就得为它包一整层 FrameLayout。PopupWindow 不可聚焦
+  （isFocusable=false），点击不会把焦点从 WebView 抢走，选区因此得以保留。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_selection_bar"
+    android:elevation="6dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="4dp"
+    android:paddingVertical="3dp">
+
+    <TextView
+        android:id="@+id/selBold"
+        style="@style/Widget.HtmlNotes.Selection.Action"
+        android:contentDescription="@string/rich_bold"
+        android:text="@string/sb_b"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/selItalic"
+        style="@style/Widget.HtmlNotes.Selection.Action"
+        android:contentDescription="@string/rich_italic"
+        android:text="@string/sb_i"
+        android:textStyle="italic" />
+
+    <TextView
+        android:id="@+id/selUnderline"
+        style="@style/Widget.HtmlNotes.Selection.Action"
+        android:contentDescription="@string/rich_underline"
+        android:text="@string/sb_u" />
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="20dp"
+        android:layout_marginHorizontal="4dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <TextView
+        android:id="@+id/selCut"
+        style="@style/Widget.HtmlNotes.Selection.Action"
+        android:text="@string/sb_cut" />
+
+    <TextView
+        android:id="@+id/selCopy"
+        style="@style/Widget.HtmlNotes.Selection.Action"
+        android:text="@string/sb_copy" />
+
+    <TextView
+        android:id="@+id/selSelectAll"
+        style="@style/Widget.HtmlNotes.Selection.Action"
+        android:text="@string/sb_select_all" />
+
+    <View
+        android:layout_width="1dp"
+        android:layout_height="20dp"
+        android:layout_marginHorizontal="4dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <TextView
+        android:id="@+id/selMore"
+        style="@style/Widget.HtmlNotes.Selection.Action"
+        android:text="@string/panel_format" />
+</LinearLayout>

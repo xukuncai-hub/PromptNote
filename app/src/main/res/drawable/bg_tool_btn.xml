@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 悬浮工具栏工具按钮：选中=主题色圆角块，按下=表面色，常态=透明（轻量不占屏） -->
+<!-- 悬浮工具栏工具按钮：选中=主题色圆角块，按下=表面色，常态=透明（M3 10dp 柔和圆角） -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_selected="true">
         <shape android:shape="rectangle">

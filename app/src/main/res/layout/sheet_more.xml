@@ -24,7 +24,7 @@
         android:layout_marginTop="14dp"
         android:text="@string/more_menu"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="13sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
     <LinearLayout
@@ -40,6 +40,19 @@
         <TextView
             style="@style/Widget.HtmlNotes.Sheet.Title"
             android:text="@string/insert_code" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/itemCopy"
+        style="@style/Widget.HtmlNotes.Sheet.Row">
+
+        <ImageView
+            style="@style/Widget.HtmlNotes.Sheet.Icon"
+            android:src="@drawable/ic_copy" />
+
+        <TextView
+            style="@style/Widget.HtmlNotes.Sheet.Title"
+            android:text="@string/copy_all_code" />
     </LinearLayout>
 
     <LinearLayout

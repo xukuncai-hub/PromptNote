@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 主题色板（深色）：8 套 Material 3 主色 + 配套次级容器色 -->
-    <color name="theme_indigo_primary">#B9C0FF</color>
-    <color name="theme_indigo_on_primary">#212473</color>
-    <color name="theme_indigo_primary_container">#393E93</color>
-    <color name="theme_indigo_on_primary_container">#E0E1FF</color>
-    <color name="theme_indigo_secondary_container">#35354A</color>
-    <color name="theme_indigo_on_secondary_container">#E3E3F6</color>
+    <!-- 主题色板（深色）：第 1 套 = Modern 编辑风主色的亮版，与 values-night/colors.xml 同源 -->
+    <color name="theme_indigo_primary">#C5B4E8</color>
+    <color name="theme_indigo_on_primary">#2C1D52</color>
+    <color name="theme_indigo_primary_container">#3E2E68</color>
+    <color name="theme_indigo_on_primary_container">#E6DDF7</color>
+    <color name="theme_indigo_secondary_container">#3B3A37</color>
+    <color name="theme_indigo_on_secondary_container">#E8E5DF</color>
 
     <color name="theme_teal_primary">#70EFDF</color>
     <color name="theme_teal_on_primary">#003832</color>

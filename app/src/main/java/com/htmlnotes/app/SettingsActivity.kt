@@ -31,6 +31,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.scroll.applySystemBarInsets(left = true, right = true, bottom = true)
 
         binding.btnBack.setOnClickListener { finishWithAnim() }
+        binding.btnBack.attachPressScale(0.88f, 100L)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 finishWithAnim()
@@ -42,6 +43,11 @@ class SettingsActivity : AppCompatActivity() {
         binding.rowClear.setOnClickListener { confirmClear() }
         binding.rowEmail.setOnClickListener { contactAuthor() }
         binding.rowGithub.setOnClickListener { openGithub() }
+
+        listOf(
+            binding.rowTheme, binding.rowThemeColor, binding.rowDefaultView,
+            binding.rowClear, binding.rowEmail, binding.rowGithub
+        ).forEach { it.attachPressScale(0.98f, 80L) }
 
         try {
             val info = packageManager.getPackageInfo(packageName, 0)
@@ -72,6 +78,9 @@ class SettingsActivity : AppCompatActivity() {
         )
         binding.viewValue.text =
             getString(if (prefs.getBoolean("grid", true)) R.string.view_grid else R.string.view_list)
+
+        val noteCount = ProjectStore(this).list().size
+        binding.notesCountValue.text = "${noteCount}篇"
     }
 
     /** 主题色选择：选中后保存并立即重建生效。 */

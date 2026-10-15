@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- 统一编辑器光标：黄色 2dp 细竖线（图3 效果）。光标高度由系统按文字字号自动决定，不写死。 -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android">
-    <size android:width="2dp" />
-    <solid android:color="#FFC107" />
-</shape>

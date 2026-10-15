@@ -4,13 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_margin="6dp"
     android:clickable="true"
     android:focusable="true"
     app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
-    app:cardCornerRadius="20dp"
+    app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
-    app:rippleColor="?attr/colorPrimary"
+    app:rippleColor="@color/card_ripple"
     app:strokeColor="?attr/colorOutlineVariant"
     app:strokeWidth="1dp">
 
@@ -32,20 +32,21 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:ellipsize="end"
-                android:maxLines="1"
+                android:fontFamily="serif"
+                android:maxLines="2"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 tools:text="区域 D 绕 x 轴旋转" />
 
-            <!-- 触控目标按无障碍要求取 48dp，图标本身靠 padding 维持原有视觉大小 -->
             <ImageButton
                 android:id="@+id/btnEdit"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_marginStart="4dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/editor_edit_title"
-                android:padding="10dp"
+                android:padding="8dp"
                 android:scaleType="fitCenter"
                 android:src="@drawable/ic_edit"
                 app:tint="?attr/colorOnSurfaceVariant" />
@@ -55,7 +56,7 @@
             android:id="@+id/snippet"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="10dp"
             android:ellipsize="end"
             android:lineSpacingExtra="3dp"
             android:maxLines="3"
@@ -66,14 +67,28 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="14dp"
             android:gravity="center_vertical"
             android:orientation="horizontal">
+
+            <!-- 笔记类型标识徽章 (Text / HTML) -->
+            <TextView
+                android:id="@+id/typeTag"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_type_tag"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                tools:text="富文本" />
 
             <TextView
                 android:id="@+id/date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
                 android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="11sp"
                 tools:text="09-18 05:14" />
@@ -90,7 +105,7 @@
                 android:importantForAccessibility="no"
                 android:src="@drawable/ic_pin"
                 android:visibility="gone"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                app:tint="?attr/colorPrimary" />
         </LinearLayout>
 
     </LinearLayout>
