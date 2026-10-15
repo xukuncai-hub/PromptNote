@@ -59,6 +59,9 @@ internal const val BLANK_SNIPPET = "（空白）"
 /** 从 HTML 或文本中提取卡片摘要。 */
 internal fun snippetOf(html: String): String {
     val text = stripHtml(html)
+    if (text.isBlank() && html.contains("<img", ignoreCase = true)) {
+        return "[图片]"
+    }
     return text.ifBlank { BLANK_SNIPPET }.take(80)
 }
 

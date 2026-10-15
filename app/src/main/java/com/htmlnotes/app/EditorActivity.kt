@@ -675,17 +675,21 @@ class EditorActivity : AppCompatActivity() {
                         // 稳健富文本内容注入器：选区存在则插入选区，选区丢失则智能追加末尾，永不丢图
                         "window._insertHtml=function(html){" +
                         "var ed=document.getElementById('ed');ed.focus();" +
-                        "var s=window.getSelection();var inserted=false;" +
+                        "var s=window.getSelection();" +
                         "if(s&&s.rangeCount>0){" +
                         "var r=s.getRangeAt(0);" +
-                        "if(ed.contains(r.commonAncestorContainer)){inserted=document.execCommand('insertHTML',false,html);}" +
+                        "if(ed.contains(r.commonAncestorContainer)){" +
+                        "r.deleteContents();" +
+                        "var el=document.createElement('div');el.innerHTML=html;" +
+                        "var frag=document.createDocumentFragment();var node,lastNode;" +
+                        "while((node=el.firstChild)){lastNode=frag.appendChild(node);}" +
+                        "r.insertNode(frag);" +
+                        "if(lastNode){var nr=document.createRange();nr.setStartAfter(lastNode);nr.collapse(true);s.removeAllRanges();s.addRange(nr);}" +
+                        "refreshState();HtmlNotes.onDirty();return;" +
                         "}" +
-                        "if(!inserted){" +
-                        "var div=document.createElement('div');div.innerHTML=html;" +
-                        "ed.appendChild(div);" +
-                        "var nr=document.createRange();nr.selectNodeContents(div);nr.collapse(false);" +
-                        "if(s){s.removeAllRanges();s.addRange(nr);}" +
                         "}" +
+                        "var el=document.createElement('div');el.innerHTML=html;" +
+                        "while(el.firstChild){ed.appendChild(el.firstChild);}" +
                         "refreshState();HtmlNotes.onDirty();" +
                         "};" +
                         // 外接键盘快捷键。必须在页面里拦：Ctrl+X 之后的键事件早就被 IME/WebView 吃掉，
