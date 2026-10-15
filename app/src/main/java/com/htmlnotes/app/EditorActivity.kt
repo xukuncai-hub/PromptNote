@@ -42,11 +42,18 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
 import com.htmlnotes.app.databinding.ActivityEditorBinding
 import com.htmlnotes.app.databinding.ItemPaletteColorBinding
 import com.htmlnotes.app.databinding.SheetColorPickerBinding
+import com.htmlnotes.app.databinding.SheetInsertImageBinding
 import com.htmlnotes.app.databinding.SheetMoreBinding
 import com.htmlnotes.app.databinding.ViewSelectionBarBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 import org.json.JSONTokener
@@ -68,6 +75,13 @@ import java.util.Locale
 class EditorActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityEditorBinding
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            handlePickedImage(uri)
+        }
+    }
     private lateinit var store: ProjectStore
     private var projectId: String? = null
     private var noteType: String = Project.TYPE_HTML
@@ -207,19 +221,17 @@ class EditorActivity : AppCompatActivity() {
             binding.edTitle.postDelayed(task, 300)
         }
 
-        // ---- 系统栏 + 键盘 insets：统一用 WindowInsets 计算底部 padding ----
-        // 用 IME insets 而非 getWindowVisibleDisplayFrame（后者在 Android 15 边到边下不可靠，
-        // 曾导致键盘弹出时底部 padding 失效、悬浮工具栏被键盘盖住）
-        // 记录当前生效的四边 padding。View.setPadding 不比较旧值、每次都无条件 requestLayout，
-        // 而 insets 的分发远比键盘动画本身频繁，不加这层判断会让整棵树多做很多次无用布局。
-        var padL = -1
-        var padT = -1
-        var padR = -1
-        var padB = -1
-        /** 最近一次收到的 insets：键盘动画结束时用它把最终 padding 一次落地。 */
+        // ---- 系统栏 + 键盘 insets：工具栏平滑跟随键盘，无抖动、无闪烁 ----
+        var isImeAnimating = false
         var lastInsets: WindowInsetsCompat? = null
 
-        /** 键盘可见性驱动工具栏形态：收起时胶囊、弹出时展开。 */
+        fun updateToolbarPosition(insets: WindowInsetsCompat) {
+            val sysBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            val imeOffset = maxOf(0, imeBottom - sysBottom)
+            dockingToolbar().translationY = -imeOffset.toFloat()
+        }
+
         fun syncDockMode(insets: WindowInsetsCompat) {
             val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
             if (imeVisible != lastImeVisible) {
@@ -228,64 +240,68 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        /** 静态 insets（首帧 / 旋转 / 导航栏变化 / 键盘动画收尾）：把 padding 落到根布局。 */
-        fun applyInsets(insets: WindowInsetsCompat) {
+        fun applySystemInsets(insets: WindowInsetsCompat) {
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             syncDockMode(insets)
             val l = sys.left
             val t = sys.top
             val r = sys.right
-            val b = maxOf(sys.bottom, ime.bottom)
-            if (l == padL && t == padT && r == padR && b == padB) return
-            padL = l
-            padT = t
-            padR = r
-            padB = b
+            val b = sys.bottom
+            if (l == rootPad[0] && t == rootPad[1] && r == rootPad[2] && b == rootPad[3]) return
             rootPad[0] = l
             rootPad[1] = t
             rootPad[2] = r
             rootPad[3] = b
             binding.root.setPadding(l, t, r, b)
-            // 键盘起落会同时改变正文和工具栏的位置，浮条得跟着重算
             updateSelectionBar()
         }
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             lastInsets = insets
-            applyInsets(insets)
+            applySystemInsets(insets)
+            if (!isImeAnimating) {
+                updateToolbarPosition(insets)
+            }
             insets
         }
 
-        /*
-         * 键盘动画期间只平移悬浮工具栏，不逐帧改 root padding。
-         *
-         * setPadding 会无条件 requestLayout，逐帧改 padding 等于每帧让整棵树重新测量布局，
-         * WebView / 代码编辑器还要跟着重排内容 —— 这才是工具栏跟随键盘「不丝滑」的主因。
-         * 改成只动 translationY（纯绘制属性，不触发布局），键盘收放全程顺滑；
-         * 动画结束时再一次性落地最终 padding，并同一帧内把平移归零，落点不变、看不到跳动。
-         */
         ViewCompat.setWindowInsetsAnimationCallback(
             binding.root,
             object : WindowInsetsAnimationCompat.Callback(DISPATCH_MODE_CONTINUE_ON_SUBTREE) {
+                override fun onPrepare(animation: WindowInsetsAnimationCompat) {
+                    if ((animation.typeMask and WindowInsetsCompat.Type.ime()) != 0) {
+                        isImeAnimating = true
+                    }
+                }
+
+                override fun onStart(
+                    animation: WindowInsetsAnimationCompat,
+                    bounds: WindowInsetsAnimationCompat.BoundsCompat
+                ): WindowInsetsAnimationCompat.BoundsCompat {
+                    if ((animation.typeMask and WindowInsetsCompat.Type.ime()) != 0) {
+                        isImeAnimating = true
+                    }
+                    return bounds
+                }
+
                 override fun onProgress(
                     insets: WindowInsetsCompat,
                     runningAnimations: MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
                     lastInsets = insets
                     syncDockMode(insets)
-                    val sysBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
-                    val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-                    // 工具栏要停在 max(导航栏, 键盘) 之上；它当前按 padB 让位，
-                    // 差额用平移补齐。键盘弹出与收起两个方向都成立。
-                    val base = if (padB < 0) sysBottom else padB
-                    dockingToolbar().translationY = (base - maxOf(sysBottom, imeBottom)).toFloat()
+                    updateToolbarPosition(insets)
                     return insets
                 }
 
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
-                    // 先同步落地最终 padding，再清平移：两者在同一帧内换手，位置连续
-                    lastInsets?.let { applyInsets(it) }
-                    dockingToolbar().translationY = 0f
+                    if ((animation.typeMask and WindowInsetsCompat.Type.ime()) != 0) {
+                        isImeAnimating = false
+                        lastInsets?.let {
+                            syncDockMode(it)
+                            updateToolbarPosition(it)
+                        }
+                    }
                 }
             }
         )
@@ -398,6 +414,10 @@ class EditorActivity : AppCompatActivity() {
 
         binding.btnLink.setOnClickListener { insertLink() }
         binding.btnImage.setOnClickListener { insertImage() }
+        binding.btnImage.setOnLongClickListener {
+            pickImageLauncher.launch("image/*")
+            true
+        }
         binding.btnCode.setOnClickListener { exec("inlineCode", null) }
         binding.btnHr.setOnClickListener { exec("insertHorizontalRule", null); toast(R.string.toast_hr) }
         binding.btnOutdent.setOnClickListener { exec("outdent", null) }
@@ -422,9 +442,10 @@ class EditorActivity : AppCompatActivity() {
             val sn = "<a href=\"https://\">链接文本</a>"
             insertCodeSnippet(sn, sn.indexOf("https://"), "https://".length); toast(R.string.toast_link)
         }
-        binding.btnSnImage.setOnClickListener {
-            val sn = "<img src=\"https://\" alt=\"\">"
-            insertCodeSnippet(sn, sn.indexOf("https://"), "https://".length); toast(R.string.toast_image)
+        binding.btnSnImage.setOnClickListener { insertImage() }
+        binding.btnSnImage.setOnLongClickListener {
+            pickImageLauncher.launch("image/*")
+            true
         }
         binding.btnSnUl.setOnClickListener { insertCodeSnippet("<ul>\n  <li></li>\n</ul>\n"); toast(R.string.rich_ul) }
         binding.btnSnHr.setOnClickListener { insertCodeSnippet("<hr>\n"); toast(R.string.toast_hr) }
@@ -569,6 +590,8 @@ class EditorActivity : AppCompatActivity() {
             useWideViewPort = true
             loadWithOverviewMode = true
             setSupportZoom(false)
+            allowFileAccess = true
+            allowContentAccess = true
         }
         binding.richWeb.addJavascriptInterface(RichBridge(), "HtmlNotes")
         binding.richWeb.webViewClient = object : WebViewClient() {
@@ -953,7 +976,7 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        /** 用户点到正文上：把标题框焦点清除（让标题光标消失），并收起面板。 */
+        /** 用户点到正文上：把标题框焦点清除（让标题光标消失）。 */
         @JavascriptInterface
         fun onEditorTap() {
             runOnUiThread {
@@ -961,7 +984,6 @@ class EditorActivity : AppCompatActivity() {
                 if (binding.edTitle.hasFocus()) {
                     binding.edTitle.clearFocus()
                 }
-                closePanels()
             }
         }
 
@@ -1199,8 +1221,15 @@ class EditorActivity : AppCompatActivity() {
         val web = binding.richWeb
         val h = web.height
         if (h <= 0) return
-        val bottomMargin = if (visiblePanelHeight() > 0) dp(48) else 0
-        val safeBottom = h - bottomMargin
+        val dockTop = currentDockTop()
+        val webLoc = IntArray(2)
+        web.getLocationOnScreen(webLoc)
+        val visibleWebHeight = if (dockTop != Int.MAX_VALUE && dockTop > webLoc[1]) {
+            dockTop - webLoc[1]
+        } else {
+            h
+        }
+        val safeBottom = (visibleWebHeight - dp(16)).coerceAtLeast(dp(100))
         val selBottom = rect.top + rect.height
         if (selBottom <= safeBottom) {
             anchorArmed = true
@@ -1251,7 +1280,8 @@ class EditorActivity : AppCompatActivity() {
         binding.btnToggleAa.isSelected = willShow
     }
 
-    private fun visiblePanelHeight(): Int = 0
+    private fun visiblePanelHeight(): Int =
+        if (binding.panelTextBlock.visibility == View.VISIBLE) binding.panelTextBlock.height else 0
 
     private fun closePanels() {
         if (binding.panelTextBlock.visibility == View.VISIBLE) {
@@ -1561,10 +1591,7 @@ class EditorActivity : AppCompatActivity() {
                         val snippet = "<a href=\"https://\">链接文本</a>"
                         insertCodeSnippet(snippet, snippet.indexOf("https://"), "https://".length)
                     }
-                    4 -> {
-                        val snippet = "<img src=\"https://\" alt=\"\">"
-                        insertCodeSnippet(snippet, snippet.indexOf("https://"), "https://".length)
-                    }
+                    4 -> insertImage()
                     5 -> copyAllCode()
                 }
             }
@@ -1577,13 +1604,15 @@ class EditorActivity : AppCompatActivity() {
 
     /**
      * 切换悬浮工具栏的形态。
-     * 键盘收起时收成一个小胶囊，几乎不挡正文，方便阅读；键盘弹出时展开成完整工具条，
-     * 停在键盘正上方。
+     * 键盘收起时收成小工具条并收起二级格式面板，方便阅读；键盘弹出时展开。
      */
     private fun updateDockMode(expanded: Boolean) {
         val isText = noteType == Project.TYPE_TEXT
         binding.toolbarText.visibility = if (isText) View.VISIBLE else View.GONE
         binding.toolbarCode.visibility = if (isText) View.GONE else View.VISIBLE
+        if (!expanded) {
+            closePanels()
+        }
         updateSelectionBar()
     }
 
@@ -1591,10 +1620,11 @@ class EditorActivity : AppCompatActivity() {
     private fun dockingToolbar(): View =
         if (noteType == Project.TYPE_TEXT) binding.toolbarText else binding.toolbarCode
 
-    /** 收起软键盘；工具栏会随键盘收起自动收回胶囊态。 */
+    /** 收起软键盘；同时收起二级排版面板。 */
     private fun hideKeyboard() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.root.windowToken, 0)
+        closePanels()
     }
 
     /** 点击胶囊：聚焦正文并唤起键盘，工具栏随键盘一起展开。 */
@@ -1637,7 +1667,52 @@ class EditorActivity : AppCompatActivity() {
             .show()
     }
 
+    /** 移动端智能图片插入：底部弹窗支持「手机相册（推荐）」与「网络图片」双入口 */
     private fun insertImage() {
+        val dialog = BottomSheetDialog(this)
+        val sheet = SheetInsertImageBinding.inflate(layoutInflater)
+        dialog.setContentView(sheet.root)
+
+        // 触控缩放微动效
+        sheet.cardPickGallery.applyColorOsPressAnim(0.96f)
+        sheet.cardInputUrl.applyColorOsPressAnim(0.96f)
+
+        sheet.cardPickGallery.setOnClickListener {
+            dialog.dismiss()
+            pickImageLauncher.launch("image/*")
+        }
+
+        sheet.cardInputUrl.setOnClickListener {
+            dialog.dismiss()
+            showImageUrlDialog()
+        }
+
+        dialog.show()
+    }
+
+    /** 处理系统相册选择的本地图片（后台安全采样 + EXIF 角度校正 + Base64 嵌入） */
+    private fun handlePickedImage(uri: Uri) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            val dataUri = ImageHelper.processPickedImage(this@EditorActivity, uri)
+            withContext(Dispatchers.Main) {
+                if (dataUri != null) {
+                    if (noteType == Project.TYPE_TEXT) {
+                        val imgHtml = "<p><img src=\"$dataUri\" alt=\"image\" style=\"max-width:100%; border-radius:12px; margin:8px 0; display:block;\" /></p><p><br></p>"
+                        exec("insertHTML", imgHtml)
+                    } else {
+                        val imgHtml = "<img src=\"$dataUri\" alt=\"image\" style=\"max-width:100%; border-radius:12px;\" />\n"
+                        insertCodeSnippet(imgHtml)
+                    }
+                    markDirty()
+                    toast(R.string.toast_image_inserted)
+                } else {
+                    toast(R.string.image_load_failed)
+                }
+            }
+        }
+    }
+
+    private fun showImageUrlDialog() {
         val input = TextInputEditText(this).apply {
             hint = getString(R.string.image_hint)
             inputType = InputType.TYPE_TEXT_VARIATION_URI
@@ -1648,13 +1723,20 @@ class EditorActivity : AppCompatActivity() {
             addView(input)
         }
         MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.insert_image)
+            .setTitle(R.string.insert_image_url)
             .setView(container)
             .setPositiveButton(R.string.done) { _, _ ->
                 val url = input.text?.toString()?.trim().orEmpty()
                 if (url.isNotEmpty()) {
-                    exec("insertImage", url)
-                    toast(R.string.toast_image)
+                    if (noteType == Project.TYPE_TEXT) {
+                        val imgHtml = "<p><img src=\"$url\" alt=\"image\" style=\"max-width:100%; border-radius:12px; margin:8px 0; display:block;\" /></p><p><br></p>"
+                        exec("insertHTML", imgHtml)
+                    } else {
+                        val imgHtml = "<img src=\"$url\" alt=\"image\" style=\"max-width:100%; border-radius:12px;\" />\n"
+                        insertCodeSnippet(imgHtml)
+                    }
+                    markDirty()
+                    toast(R.string.toast_image_inserted)
                 }
             }
             .setNegativeButton(R.string.cancel, null)

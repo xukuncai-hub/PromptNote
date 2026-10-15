@@ -59,7 +59,7 @@ object NoteHtml {
 
     /** 正文区共享 CSS（#ed 容器）。对齐 ColorOS 16 官方 TipTap 排版体系与色彩标准。 */
     private fun contentCss(p: Palette): String =
-        "#ed{outline:none;min-height:100%;padding:16px 20px 28px 20px;" +
+        "#ed{outline:none;min-height:100%;padding:16px 20px 45vh 20px;" +
             "font-family:-apple-system,'Segoe UI',Roboto,'OPPO Sans 4.0 SC',sans-serif;font-size:16px;line-height:1.72;" +
             "caret-color:${p.accent};word-break:break-word;" +
             // 去掉 WebView 点按时的灰蓝闪烁
