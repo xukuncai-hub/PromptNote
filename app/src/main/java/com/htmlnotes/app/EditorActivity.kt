@@ -168,12 +168,6 @@ class EditorActivity : AppCompatActivity() {
     private var focusTitleTask: Runnable? = null
     private var focusBodyTask: Runnable? = null
 
-    /**
-     * CursorKeeper 的注销函数。必须持有并在 onDestroy 调用：它会摘掉全局布局监听，
-     * 并撤掉那个 120ms 的延迟 blur —— 延迟任务会对 WebView 调 evaluateJavascript，
-     * 而 onDestroy 紧接着就 destroy 掉它。
-     */
-    private var cursorKeeperDetach: (() -> Unit)? = null
 
     private val enabledColor: Int by lazy {
         MaterialColors.getColor(binding.btnDone, android.R.attr.textColorPrimary)
@@ -453,7 +447,16 @@ class EditorActivity : AppCompatActivity() {
         binding.btnSnCheck.setOnClickListener { insertCodeSnippet("☑ "); toast(R.string.check_list) }
         binding.btnCopyAll.setOnClickListener { copyAllCode() }
 
-        cursorKeeperDetach = CursorKeeper.attach(this, binding.edTitle, binding.edContent, binding.richWeb)
+        binding.edContent.setOnClickListener {
+            if (binding.edTitle.hasFocus()) {
+                binding.edTitle.clearFocus()
+            }
+            binding.edContent.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showSoftInput(binding.edContent, InputMethodManager.SHOW_IMPLICIT)
+            ViewCompat.getWindowInsetsController(binding.edContent)
+                ?.show(WindowInsetsCompat.Type.ime())
+        }
     }
 
     // ---------------- 工具栏通用：短暂高亮 / 轻量 toast ----------------
@@ -569,9 +572,6 @@ class EditorActivity : AppCompatActivity() {
         // 「未保存」提示的淡出是 view.postDelayed 挂在 saveState 上的，不撤会跑到 destroy 之后
         binding.saveState.removeCallbacks(hideSaveState)
         binding.saveState.animate().cancel()
-        // 摘掉 CursorKeeper 的全局布局监听与它挂起的延迟 blur（会碰 WebView）
-        cursorKeeperDetach?.invoke()
-        cursorKeeperDetach = null
         // 富文本 WebView 注册了 @JavascriptInterface（间接持有 Activity），不销毁会泄漏。
         // 代码模式下它虽然没被使用，但同样持有资源，一并销毁。
         binding.richWeb.removeJavascriptInterface("HtmlNotes")
@@ -584,6 +584,8 @@ class EditorActivity : AppCompatActivity() {
     // ---------------- 富文本编辑器 ----------------
 
     private fun setupRichWeb(content: String) {
+        binding.richWeb.isFocusable = true
+        binding.richWeb.isFocusableInTouchMode = true
         with(binding.richWeb.settings) {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -647,8 +649,12 @@ class EditorActivity : AppCompatActivity() {
                         // 正文自己滚、以及原生主动滚，都会让选区的视口坐标变化：
                         // 不订阅的话滚动之后原生拿到的还是旧坐标，浮条和锚定全都会错位。
                         "window.addEventListener('scroll',refreshState,true);" +
-                        // 点正文：收起二级面板（原生收到后会再判一次锚定）
-                        "ed.addEventListener('click',function(){HtmlNotes.onEditorTap();});" +
+                        // 点正文或空白处：聚焦并保证唤起键盘
+                        "document.addEventListener('click',function(e){" +
+                        "if(document.activeElement!==ed&&(!ed.contains(e.target)||e.target===document.body)){ed.focus();}" +
+                        "HtmlNotes.onEditorTap();" +
+                        "});" +
+                        "document.addEventListener('touchend',function(e){HtmlNotes.onEditorTap();});" +
                         // 外接键盘快捷键。必须在页面里拦：Ctrl+X 之后的键事件早就被 IME/WebView 吃掉，
                         // 原生 onKeyDown 根本收不到。capture 挂在 document 上，赶在浏览器默认动作之前
                         // 抹掉它，否则 execCommand 会跟内置处理各翻一次加粗，等于没按。
@@ -691,6 +697,8 @@ class EditorActivity : AppCompatActivity() {
                         "var s=getSelection();s.removeAllRanges();s.addRange(r);}",
                     null
                 )
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(binding.richWeb, InputMethodManager.SHOW_IMPLICIT)
                 ViewCompat.getWindowInsetsController(binding.richWeb)
                     ?.show(WindowInsetsCompat.Type.ime())
             }
@@ -976,7 +984,7 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        /** 用户点到正文上：把标题框焦点清除（让标题光标消失）。 */
+        /** 用户点到正文上：清除标题框焦点，确保 WebView 聚焦并唤起键盘 */
         @JavascriptInterface
         fun onEditorTap() {
             runOnUiThread {
@@ -984,6 +992,11 @@ class EditorActivity : AppCompatActivity() {
                 if (binding.edTitle.hasFocus()) {
                     binding.edTitle.clearFocus()
                 }
+                binding.richWeb.requestFocus()
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(binding.richWeb, InputMethodManager.SHOW_IMPLICIT)
+                ViewCompat.getWindowInsetsController(binding.richWeb)
+                    ?.show(WindowInsetsCompat.Type.ime())
             }
         }
 
@@ -1629,15 +1642,18 @@ class EditorActivity : AppCompatActivity() {
 
     /** 点击胶囊：聚焦正文并唤起键盘，工具栏随键盘一起展开。 */
     private fun focusBody() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
         if (noteType == Project.TYPE_TEXT) {
             binding.richWeb.requestFocus()
             binding.richWeb.evaluateJavascript(
                 "var ed=document.getElementById('ed');if(ed)ed.focus();", null
             )
+            imm?.showSoftInput(binding.richWeb, InputMethodManager.SHOW_IMPLICIT)
             ViewCompat.getWindowInsetsController(binding.richWeb)
                 ?.show(WindowInsetsCompat.Type.ime())
         } else {
             binding.edContent.requestFocus()
+            imm?.showSoftInput(binding.edContent, InputMethodManager.SHOW_IMPLICIT)
             ViewCompat.getWindowInsetsController(binding.edContent)
                 ?.show(WindowInsetsCompat.Type.ime())
         }

@@ -29,6 +29,18 @@ class SelectableWebView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : WebView(context, attrs, defStyleAttr) {
 
+    init {
+        isFocusable = true
+        isFocusableInTouchMode = true
+    }
+
+    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.action == android.view.MotionEvent.ACTION_DOWN) {
+            requestFocusFromTouch()
+        }
+        return super.onTouchEvent(event)
+    }
+
     /** 选区浮条是否正在接管剪切/复制/全选。 */
     var suppressSelectionActionMode = false
 
