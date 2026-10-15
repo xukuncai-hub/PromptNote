@@ -35,9 +35,6 @@ class SelectableWebView @JvmOverloads constructor(
     }
 
     override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
-        if (event.action == android.view.MotionEvent.ACTION_DOWN) {
-            requestFocusFromTouch()
-        }
         return super.onTouchEvent(event)
     }
 

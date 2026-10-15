@@ -663,11 +663,29 @@ class EditorActivity : AppCompatActivity() {
                         "ed.addEventListener('mouseup',refreshState);" +
                         // 光标/选区变化实时刷新工具栏状态，告别状态滞后
                         "document.addEventListener('selectionchange',refreshState);" +
-                        // 正文自己滚、以及原生主动滚，都会让选区的视口坐标变化：
-                        // 不订阅的话滚动之后原生拿到的还是旧坐标，浮条和锚定全都会错位。
-                        "window.addEventListener('scroll',refreshState,true);" +
-                        // 点击事件：精准区分复选框、图片与正文聚焦（滑动不触发 click，彻底解决翻看误弹键盘）
+                        // 跟踪触控移动与滚动，彻底杜绝浏览/滑动手势误触发点击与键盘弹出
+                        "var _touchStartX=0,_touchStartY=0,_isScrolling=false,_lastScrollTime=0,_lastScrollY=0;" +
+                        "window.addEventListener('touchstart',function(e){" +
+                        "if(e.touches&&e.touches.length){_touchStartX=e.touches[0].clientX;_touchStartY=e.touches[0].clientY;}" +
+                        "_isScrolling=false;" +
+                        "},{passive:true});" +
+                        "window.addEventListener('touchmove',function(e){" +
+                        "if(e.touches&&e.touches.length){" +
+                        "var dx=Math.abs(e.touches[0].clientX-_touchStartX);" +
+                        "var dy=Math.abs(e.touches[0].clientY-_touchStartY);" +
+                        "if(dx>6||dy>6){_isScrolling=true;}" +
+                        "}" +
+                        "},{passive:true});" +
+                        "window.addEventListener('scroll',function(){" +
+                        "_isScrolling=true;_lastScrollTime=Date.now();" +
+                        "var curY=window.scrollY||document.documentElement.scrollTop||0;" +
+                        "var dy=curY-_lastScrollY;_lastScrollY=curY;" +
+                        "if(Math.abs(dy)>12){HtmlNotes.onScrollDirection(dy>0);}" +
+                        "refreshState();" +
+                        "},true);" +
+                        // 点击事件：精准区分复选框、图片与正文聚焦（滑动与惯性制动绝对不误触发）
                         "document.addEventListener('click',function(e){" +
+                        "if(_isScrolling||(Date.now()-_lastScrollTime<350)){return;}" +
                         "var t=e.target;" +
                         "if(t&&t.tagName==='INPUT'&&t.type==='checkbox'){" +
                         "if(t.checked){t.setAttribute('checked','checked');}else{t.removeAttribute('checked');}" +
@@ -1036,7 +1054,26 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        /** 用户点到正文上：清除标题框焦点，确保 WebView 聚焦并唤起键盘 */
+        /** 页面滚动方向感知：在浏览模式下向下滚动时收起工具栏，向上滚动时滑出，提供完全沉浸阅读体验 */
+        @JavascriptInterface
+        fun onScrollDirection(down: Boolean) {
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                dismissSelectionBar()
+                if (lastImeVisible != true) {
+                    val dock = dockingToolbar()
+                    if (dock.visibility == View.VISIBLE) {
+                        if (down) {
+                            dock.animate().translationY(dock.height.toFloat() + dp(32)).setDuration(220).start()
+                        } else {
+                            dock.animate().translationY(0f).setDuration(220).start()
+                        }
+                    }
+                }
+            }
+        }
+
+        /** 用户点到正文上：清除标题框焦点，平滑滑入工具栏并唤起输入法 */
         @JavascriptInterface
         fun onEditorTap() {
             runOnUiThread {
@@ -1045,10 +1082,9 @@ class EditorActivity : AppCompatActivity() {
                     binding.edTitle.clearFocus()
                 }
                 binding.richWeb.requestFocus()
+                dockingToolbar().animate().translationY(0f).setDuration(180).start()
                 val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
                 imm?.showSoftInput(binding.richWeb, InputMethodManager.SHOW_IMPLICIT)
-                ViewCompat.getWindowInsetsController(binding.richWeb)
-                    ?.show(WindowInsetsCompat.Type.ime())
             }
         }
 
@@ -1114,7 +1150,9 @@ class EditorActivity : AppCompatActivity() {
     }
 
     private fun onSelectionUpdated() {
-        evaluateAnchor()
+        if (lastImeVisible == true) {
+            evaluateAnchor()
+        }
         updateSelectionBar()
     }
 
@@ -1150,14 +1188,14 @@ class EditorActivity : AppCompatActivity() {
     }
 
     /**
-     * 浮条的可见性与坐标。选区折叠（只有光标）时立刻收起 —— 此时该由系统的
-     * insertion 模式接管（粘贴气泡），两套并存只会互相打架。
+     * 浮条的可见性与坐标。仅在软键盘唤起且有真实选区时贴合出现；
+     * 浏览模式下（键盘收起）或选区折叠（光标）时立刻收起，杜绝翻看浏览时频繁弹出浮条打扰阅读。
      */
     private fun updateSelectionBar() {
         val popup = selPopup ?: return
         if (isFinishing || isDestroyed) return
         val rect = selRect
-        if (noteType != Project.TYPE_TEXT || rect == null || rect.collapsed) {
+        if (noteType != Project.TYPE_TEXT || rect == null || rect.collapsed || lastImeVisible != true) {
             dismissSelectionBar()
             return
         }
@@ -1291,6 +1329,8 @@ class EditorActivity : AppCompatActivity() {
     private fun evaluateAnchor() {
         if (isFinishing || isDestroyed) return
         if (noteType != Project.TYPE_TEXT) return
+        // 软键盘未弹出时处于浏览/阅读状态，绝不自动滚动正文或抢视口
+        if (lastImeVisible != true) return
         val rect = selRect ?: return
         val web = binding.richWeb
         val h = web.height
@@ -1569,7 +1609,13 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
-    private fun doDone() = saveAndExit()
+    private fun doDone() {
+        if (lastImeVisible == true) {
+            hideKeyboard()
+        } else {
+            saveAndExit()
+        }
+    }
 
     private fun showMoreMenu() {
         val dialog = BottomSheetDialog(this)
@@ -1682,14 +1728,17 @@ class EditorActivity : AppCompatActivity() {
 
     /**
      * 切换悬浮工具栏的形态。
-     * 键盘收起时收成小工具条并收起二级格式面板，方便阅读；键盘弹出时展开。
+     * 键盘收起时收成小工具条并收起二级格式面板与选区浮条，方便阅读；键盘弹出时展开。
      */
     private fun updateDockMode(expanded: Boolean) {
         val isText = noteType == Project.TYPE_TEXT
         binding.toolbarText.visibility = if (isText) View.VISIBLE else View.GONE
         binding.toolbarCode.visibility = if (isText) View.GONE else View.VISIBLE
+        dockingToolbar().animate().cancel()
+        dockingToolbar().translationY = 0f
         if (!expanded) {
             closePanels()
+            dismissSelectionBar()
         }
         updateSelectionBar()
     }
@@ -1698,11 +1747,12 @@ class EditorActivity : AppCompatActivity() {
     private fun dockingToolbar(): View =
         if (noteType == Project.TYPE_TEXT) binding.toolbarText else binding.toolbarCode
 
-    /** 收起软键盘；同时收起二级排版面板。 */
+    /** 收起软键盘；同时收起二级排版面板与选区浮条。 */
     private fun hideKeyboard() {
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.hideSoftInputFromWindow(binding.root.windowToken, 0)
         closePanels()
+        dismissSelectionBar()
     }
 
     /** 点击胶囊：聚焦正文并唤起键盘，工具栏随键盘一起展开。 */
