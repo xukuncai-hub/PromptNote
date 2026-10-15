@@ -27,8 +27,8 @@ android {
         applicationId = "com.htmlnotes.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "2.0.1"
+        versionCode = 3
+        versionName = "2.0.2"
 
         // 应用只提供中英两套文案，剔除 AndroidX / Material 自带的其余语言资源
         resourceConfigurations += listOf("zh", "en")
