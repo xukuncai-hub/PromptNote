@@ -179,70 +179,33 @@
             android:typeface="monospace"
             android:visibility="gone" />
 
-        <!-- ════════ 文字模式：常驻一级工具栏 + 两个折叠面板 ════════ -->
-        <!--
-          一级只保留最高频的 6 个入口并居中，常规屏宽下不再需要横向滚动；
-          其余功能按语义拆进「段落」和「格式」两个面板，各自展开、互斥。
-        -->
+        <!-- ════════ 文字模式：单层平铺横向格式栏（微信/Apple Notes 风格，直观高效零多余点击） ════════ -->
         <LinearLayout
             android:id="@+id/toolbarText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginBottom="10dp"
-            android:orientation="vertical">
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_toolbar_dock"
+            android:elevation="6dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="4dp">
 
-            <!--
-              胶囊态：键盘收起时工具栏只留一个小圆角入口，避免整条悬浮栏压住正文。
-              键盘弹出后自动切换为下面的完整形态，并随键盘一起停在键盘上方。
-            -->
-            <LinearLayout
-                android:id="@+id/capsuleText"
-                style="@style/Widget.HtmlNotes.Tool.Capsule"
-                android:contentDescription="@string/edit_content">
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/ic_edit"
-                    app:tint="?attr/colorPrimary" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/edit_content"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <!-- 展开态：一级工具栏 + 两个格式面板（键盘弹出时可见） -->
-            <LinearLayout
-                android:id="@+id/fullText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_toolbar_dock"
-                android:elevation="6dp"
-                android:orientation="vertical"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp">
-
-            <!-- 一级：字符样式 + 段落面板 + 格式面板 -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="42dp"
                 android:fillViewport="true"
-                tools:ignore="ScrollViewSize"
                 android:scrollbars="none">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="6dp">
+                    android:paddingHorizontal="4dp">
 
+                    <!-- 1. 基础字符格式 B / I / U / S -->
                     <TextView
                         android:id="@+id/btnTB"
                         style="@style/Widget.HtmlNotes.Tool.Square"
@@ -276,445 +239,270 @@
 
                     <View
                         android:layout_width="1dp"
-                        android:layout_height="22dp"
+                        android:layout_height="20dp"
                         android:layout_marginHorizontal="6dp"
                         android:background="?attr/colorOutlineVariant" />
 
-                    <!-- 段落：标题层级 / 对齐 / 列表 / 引用 / 缩进 -->
-                    <LinearLayout
-                        android:id="@+id/btnPanelStyle"
-                        style="@style/Widget.HtmlNotes.Tool.LabelChip"
-                        android:contentDescription="@string/panel_paragraph">
+                    <!-- 2. 标题层级 H1 / H2 / H3 / 正文 -->
+                    <TextView
+                        android:id="@+id/segTitle"
+                        style="@style/Widget.HtmlNotes.Tool.Chip"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/rich_h1"
+                        android:text="H1"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
-                        <ImageView
-                            android:layout_width="16dp"
-                            android:layout_height="16dp"
-                            android:importantForAccessibility="no"
-                            android:src="@drawable/ic_paragraph"
-                            app:tint="@color/tool_btn_tint" />
+                    <TextView
+                        android:id="@+id/segSubtitle"
+                        style="@style/Widget.HtmlNotes.Tool.Chip"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/rich_h2"
+                        android:text="H2"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:text="@string/panel_paragraph"
-                            android:textColor="@color/tool_btn_text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
+                    <TextView
+                        android:id="@+id/segHeading"
+                        style="@style/Widget.HtmlNotes.Tool.Chip"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/rich_h3"
+                        android:text="H3"
+                        android:textSize="14sp" />
 
-                    <!-- 格式：字号 / 颜色 / 高亮 / 字体 / 行内代码 / 链接 / 图片 / 清除 -->
-                    <LinearLayout
-                        android:id="@+id/btnPanelFormat"
-                        style="@style/Widget.HtmlNotes.Tool.LabelChip"
-                        android:layout_marginStart="4dp"
-                        android:contentDescription="@string/panel_format">
+                    <TextView
+                        android:id="@+id/segBody"
+                        style="@style/Widget.HtmlNotes.Tool.Chip"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/seg_body"
+                        android:text="正文"
+                        android:textSize="13sp" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Aa"
-                            android:textColor="@color/tool_btn_text"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="20dp"
+                        android:layout_marginHorizontal="6dp"
+                        android:background="?attr/colorOutlineVariant" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:text="@string/panel_format"
-                            android:textColor="@color/tool_btn_text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
+                    <!-- 3. 列表与清单 待办 / 无序列表 / 有序列表 / 引用 -->
+                    <ImageButton
+                        android:id="@+id/btnTodo"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/todo_menu"
+                        android:src="@drawable/ic_plus" />
+
+                    <ImageButton
+                        android:id="@+id/btnUl"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/rich_ul"
+                        android:src="@drawable/ic_list_ul" />
+
+                    <ImageButton
+                        android:id="@+id/btnOl"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/rich_ol"
+                        android:src="@drawable/ic_list_ol" />
+
+                    <ImageButton
+                        android:id="@+id/btnQuote"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/para_quote"
+                        android:src="@drawable/ic_quote" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="20dp"
+                        android:layout_marginHorizontal="6dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <!-- 4. 对齐方式 左 / 中 / 右 -->
+                    <ImageButton
+                        android:id="@+id/btnAlignL"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/rich_align_left"
+                        android:src="@drawable/ic_align_left" />
+
+                    <ImageButton
+                        android:id="@+id/btnAlignC"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/rich_align_center"
+                        android:src="@drawable/ic_align_center" />
+
+                    <ImageButton
+                        android:id="@+id/btnAlignR"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/rich_align_right"
+                        android:src="@drawable/ic_align_right" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="20dp"
+                        android:layout_marginHorizontal="6dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <!-- 5. 颜色 / 高亮 / 字号 / 字体 -->
+                    <TextView
+                        android:id="@+id/btnColor"
+                        style="@style/Widget.HtmlNotes.Tool.Chip"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/bg_a_color"
+                        android:contentDescription="@string/rich_color"
+                        android:text="A"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnHl"
+                        style="@style/Widget.HtmlNotes.Tool.Chip"
+                        android:layout_marginEnd="4dp"
+                        android:background="@drawable/bg_tool_hl"
+                        android:contentDescription="@string/style_highlight"
+                        android:text="A"
+                        android:textColor="@color/hl_text"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnSize"
+                        style="@style/Widget.HtmlNotes.Tool.Chip"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/font_size"
+                        android:text="字号"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/btnFont"
+                        style="@style/Widget.HtmlNotes.Tool.Chip"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/font_system"
+                        android:text="字体"
+                        android:textSize="13sp" />
+
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="20dp"
+                        android:layout_marginHorizontal="6dp"
+                        android:background="?attr/colorOutlineVariant" />
+
+                    <!-- 6. 高级插入与格式 (链接 / 图片 / 代码 / 缩进 / 清除) -->
+                    <ImageButton
+                        android:id="@+id/btnLink"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/insert_link"
+                        android:src="@drawable/ic_link" />
+
+                    <ImageButton
+                        android:id="@+id/btnImage"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/insert_image"
+                        android:src="@drawable/ic_image" />
+
+                    <ImageButton
+                        android:id="@+id/btnCode"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/para_code"
+                        android:src="@drawable/ic_code" />
+
+                    <ImageButton
+                        android:id="@+id/btnHr"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/insert_hr"
+                        android:src="@drawable/ic_hr" />
+
+                    <ImageButton
+                        android:id="@+id/btnOutdent"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/para_outdent"
+                        android:src="@drawable/ic_outdent" />
+
+                    <ImageButton
+                        android:id="@+id/btnIndent"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
+                        android:contentDescription="@string/para_indent"
+                        android:src="@drawable/ic_indent" />
+
+                    <ImageButton
+                        android:id="@+id/btnClear"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:contentDescription="@string/rich_clear"
+                        android:src="@drawable/ic_close" />
                 </LinearLayout>
             </HorizontalScrollView>
-
-            <!-- ══ 面板一：段落层级 / 对齐 / 列表 / 引用 / 缩进 ══ -->
-            <LinearLayout
-                android:id="@+id/panelStyle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fillViewport="true"
-                    tools:ignore="ScrollViewSize"
-                    android:paddingTop="6dp"
-                    android:scrollbars="none">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="6dp">
-
-                        <TextView
-                            android:id="@+id/segTitle"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/rich_h1"
-                            android:text="@string/seg_title"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/segSubtitle"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/rich_h2"
-                            android:text="@string/seg_subtitle"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/segHeading"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/rich_h3"
-                            android:text="@string/seg_heading"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/segBody"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/seg_body"
-                            android:text="@string/seg_body"
-                            android:textSize="14sp" />
-
-                        <TextView
-                            android:id="@+id/segCaption"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:contentDescription="@string/seg_caption"
-                            android:text="@string/seg_caption"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-                </HorizontalScrollView>
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fillViewport="true"
-                    tools:ignore="ScrollViewSize"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="4dp"
-                    android:scrollbars="none">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="6dp">
-
-                        <ImageButton
-                            android:id="@+id/btnAlignL"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/rich_align_left"
-                            android:src="@drawable/ic_align_left" />
-
-                        <ImageButton
-                            android:id="@+id/btnAlignC"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/rich_align_center"
-                            android:src="@drawable/ic_align_center" />
-
-                        <ImageButton
-                            android:id="@+id/btnAlignR"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/rich_align_right"
-                            android:src="@drawable/ic_align_right" />
-
-                        <ImageButton
-                            android:id="@+id/btnUl"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/rich_ul"
-                            android:src="@drawable/ic_list_ul" />
-
-                        <ImageButton
-                            android:id="@+id/btnOl"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/rich_ol"
-                            android:src="@drawable/ic_list_ol" />
-
-                        <ImageButton
-                            android:id="@+id/btnTodo"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/todo_menu"
-                            android:src="@drawable/ic_plus" />
-
-                        <ImageButton
-                            android:id="@+id/btnQuote"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/para_quote"
-                            android:src="@drawable/ic_quote" />
-
-                        <ImageButton
-                            android:id="@+id/btnOutdent"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/para_outdent"
-                            android:src="@drawable/ic_outdent" />
-
-                        <ImageButton
-                            android:id="@+id/btnIndent"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:contentDescription="@string/para_indent"
-                            android:src="@drawable/ic_indent" />
-                    </LinearLayout>
-                </HorizontalScrollView>
-            </LinearLayout>
-
-            <!-- ══ 面板二：字号 / 颜色 / 高亮 / 字体 / 行内代码 / 链接 / 图片 / 清除 ══ -->
-            <LinearLayout
-                android:id="@+id/panelFormat"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fillViewport="true"
-                    tools:ignore="ScrollViewSize"
-                    android:paddingTop="6dp"
-                    android:scrollbars="none">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="6dp">
-
-                        <TextView
-                            android:id="@+id/btnSize"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/font_size"
-                            android:text="Aa"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/btnColor"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:layout_marginEnd="4dp"
-                            android:background="@drawable/bg_a_color"
-                            android:contentDescription="@string/rich_color"
-                            android:text="A"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/btnHl"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:layout_marginEnd="4dp"
-                            android:background="@drawable/bg_tool_hl"
-                            android:contentDescription="@string/style_highlight"
-                            android:text="A"
-                            android:textColor="@color/hl_text"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/btnFont"
-                            style="@style/Widget.HtmlNotes.Tool.Chip"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/font_system"
-                            android:text="@string/font_system"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-                </HorizontalScrollView>
-
-                <HorizontalScrollView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:fillViewport="true"
-                    tools:ignore="ScrollViewSize"
-                    android:paddingTop="4dp"
-                    android:paddingBottom="4dp"
-                    android:scrollbars="none">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:gravity="center"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="6dp">
-
-                        <ImageButton
-                            android:id="@+id/btnCode"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/para_code"
-                            android:src="@drawable/ic_code" />
-
-                        <ImageButton
-                            android:id="@+id/btnHr"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/insert_hr"
-                            android:src="@drawable/ic_hr" />
-
-                        <ImageButton
-                            android:id="@+id/btnLink"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/insert_link"
-                            android:src="@drawable/ic_link" />
-
-                        <ImageButton
-                            android:id="@+id/btnImage"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:layout_marginEnd="4dp"
-                            android:contentDescription="@string/insert_image"
-                            android:src="@drawable/ic_image" />
-
-                        <ImageButton
-                            android:id="@+id/btnClear"
-                            style="@style/Widget.HtmlNotes.Tool.Icon36"
-                            android:contentDescription="@string/rich_clear"
-                            android:src="@drawable/ic_close" />
-                    </LinearLayout>
-                </HorizontalScrollView>
-            </LinearLayout>
-            </LinearLayout>
         </LinearLayout>
 
-        <!-- ════════ 代码模式：常驻编码工具栏 + 折叠代码片段面板 ════════ -->
-        <!--
-          撤销/重做只保留在顶栏，避免同一操作在上下两处重复；
-          这里只放代码编辑特有的缩进、格式化、清空与片段插入。
-        -->
+        <!-- ════════ 代码模式：单层平铺代码工具栏 ════════ -->
         <LinearLayout
             android:id="@+id/toolbarCode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="10dp"
-            android:layout_marginBottom="10dp"
-            android:orientation="vertical"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/bg_toolbar_dock"
+            android:elevation="6dp"
+            android:orientation="horizontal"
+            android:paddingHorizontal="4dp"
+            android:paddingVertical="4dp"
             android:visibility="gone">
-
-            <!-- 胶囊态：键盘收起时只留编辑入口，避免悬浮栏压住代码 -->
-            <LinearLayout
-                android:id="@+id/capsuleCode"
-                style="@style/Widget.HtmlNotes.Tool.Capsule"
-                android:contentDescription="@string/edit_content">
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/ic_edit"
-                    app:tint="?attr/colorPrimary" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/edit_content"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp" />
-            </LinearLayout>
-
-            <!-- 展开态：缩进/格式化工具栏 + 代码片段面板（键盘弹出时可见） -->
-            <LinearLayout
-                android:id="@+id/fullCode"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_toolbar_dock"
-                android:elevation="6dp"
-                android:orientation="vertical"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp">
 
             <HorizontalScrollView
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="42dp"
                 android:fillViewport="true"
-                tools:ignore="ScrollViewSize"
                 android:scrollbars="none">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:gravity="center"
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="6dp">
+                    android:paddingHorizontal="4dp">
 
                     <ImageButton
                         android:id="@+id/btnCIndent"
-                        style="@style/Widget.HtmlNotes.Tool.Icon40"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
                         android:contentDescription="@string/code_indent"
                         android:src="@drawable/ic_indent" />
 
                     <ImageButton
                         android:id="@+id/btnCOutdent"
-                        style="@style/Widget.HtmlNotes.Tool.Icon40"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
                         android:contentDescription="@string/code_outdent"
                         android:src="@drawable/ic_outdent" />
 
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="22dp"
-                        android:layout_marginHorizontal="6dp"
-                        android:background="?attr/colorOutlineVariant" />
-
                     <ImageButton
                         android:id="@+id/btnFormatCode"
-                        style="@style/Widget.HtmlNotes.Tool.Icon40"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
                         android:contentDescription="@string/format_code"
                         android:src="@drawable/ic_format" />
 
                     <ImageButton
                         android:id="@+id/btnClearCode"
-                        style="@style/Widget.HtmlNotes.Tool.Icon40"
+                        style="@style/Widget.HtmlNotes.Tool.Icon36"
+                        android:layout_marginEnd="4dp"
                         android:contentDescription="@string/clear_code"
                         android:src="@drawable/ic_delete" />
 
                     <View
                         android:layout_width="1dp"
-                        android:layout_height="22dp"
+                        android:layout_height="20dp"
                         android:layout_marginHorizontal="6dp"
                         android:background="?attr/colorOutlineVariant" />
-
-                    <ImageButton
-                        android:id="@+id/btnMoreCode"
-                        style="@style/Widget.HtmlNotes.Tool.Icon40"
-                        android:contentDescription="@string/code_snippets"
-                        android:src="@drawable/ic_more" />
-                </LinearLayout>
-            </HorizontalScrollView>
-
-            <!-- 折叠代码片段面板：一键插入常用 HTML 片段。
-                 分两行排布 —— 单行 7 项会超出屏宽，「复制全部代码」这类靠后的项
-                 必须横向滚动才能看到，对用户不可发现。 -->
-            <LinearLayout
-                android:id="@+id/panelCode"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:paddingTop="6dp"
-                android:paddingBottom="4dp"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="36dp"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="6dp">
 
                     <TextView
                         android:id="@+id/btnSnLink"
@@ -737,15 +525,8 @@
                     <TextView
                         android:id="@+id/btnSnHr"
                         style="@style/Widget.HtmlNotes.Tool.Chip.Wide"
+                        android:layout_marginEnd="4dp"
                         android:text="@string/insert_hr" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="36dp"
-                    android:gravity="center"
-                    android:orientation="horizontal"
-                    android:paddingHorizontal="6dp">
 
                     <TextView
                         android:id="@+id/btnSnTodo"
@@ -764,8 +545,7 @@
                         style="@style/Widget.HtmlNotes.Tool.Chip.Wide"
                         android:text="@string/copy_all_code" />
                 </LinearLayout>
-            </LinearLayout>
-            </LinearLayout>
+            </HorizontalScrollView>
         </LinearLayout>
     </LinearLayout>
 

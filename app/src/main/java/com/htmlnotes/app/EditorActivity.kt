@@ -289,21 +289,17 @@ class EditorActivity : AppCompatActivity() {
 
         // ---- 顶栏交互 ----
         binding.btnBack.setOnClickListener { saveAndExit() }
-        // 返回键 / 返回手势：格式面板展开时先收起面板，键盘显示时先收起键盘，
-        // 再按一次才保存退出。Android 13+ 预测式返回同样生效。
+        // 返回键 / 返回手势：键盘显示时先收起键盘，再次按保存退出。
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (visiblePanelHeight() > 0) {
-                    closePanels()
-                } else if (lastImeVisible == true) {
+                if (lastImeVisible == true) {
                     hideKeyboard()
                 } else {
                     saveAndExit()
                 }
             }
         })
-        // 面板开合会让正文高度变化（weight 分配），这正是选区可能被挤出视口的时刻。
-        // 布局落定后再判一次锚定，把用户正在改的那段字拉回安全区。
+        // 选区可能被遮挡时重算锚定，把用户正在改的那段字拉回视口安全区。
         binding.richWeb.addOnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
             if (bottom != oldBottom) evaluateAnchor()
         }
@@ -312,96 +308,23 @@ class EditorActivity : AppCompatActivity() {
         binding.btnDone.setOnClickListener { doDone() }
         binding.btnMore.setOnClickListener { showMoreMenu() }
         binding.btnPreview.setOnClickListener { previewNote() }
-        // 胶囊本身就是"开始编辑"的入口：点它唤起键盘，工具栏随之展开
-        binding.capsuleText.setOnClickListener { focusBody() }
-        binding.capsuleCode.setOnClickListener { focusBody() }
 
-        // 选区浮条走 PopupWindow，不进布局；这里把视图建好、把动作接上
+        // 选区浮条走 PopupWindow
         setupSelectionBar()
-        // 轻提示贴在工具栏上方；下边界每次显示时重新取，胶囊↔完整条切换会改它
         tip = EditorTip(binding.root) { tipBottomLimit() }
 
-        // 胶囊↔完整条、面板展开/收起统一走柔和过渡：渐显 + 轻微上浮。
-        // 注意：LayoutTransition 只拦截「直接子 View」的显隐/布局变化——
-        // 面板（panelStyle/panelFormat/panelCode）挂在 fullText/fullCode 之下，
-        // 所以工具栏容器负责胶囊↔完整条的形态过渡（220ms，跟手），full 容器负责
-        // 面板子项的渐显渐隐（280ms，展开更有质感），两者各挂一份，缺一不可，
-        // 否则面板会「只占位不显示」（alpha 停在 0）。
-        val dockTransition = { LayoutTransition().apply {
-            setDuration(220)
-            val decel = DecelerateInterpolator()
-            setInterpolator(LayoutTransition.CHANGE_APPEARING, decel)
-            setInterpolator(LayoutTransition.CHANGE_DISAPPEARING, decel)
-            setInterpolator(LayoutTransition.CHANGING, decel)
-            setAnimator(
-                LayoutTransition.APPEARING,
-                AnimatorSet().apply {
-                    playTogether(
-                        ObjectAnimator.ofFloat(null, View.ALPHA, 0f, 1f),
-                        ObjectAnimator.ofFloat(null, View.TRANSLATION_Y, dp(12).toFloat(), 0f)
-                    )
-                }
-            )
-            setAnimator(
-                LayoutTransition.DISAPPEARING,
-                AnimatorSet().apply {
-                    playTogether(
-                        ObjectAnimator.ofFloat(null, View.ALPHA, 1f, 0f),
-                        ObjectAnimator.ofFloat(null, View.TRANSLATION_Y, 0f, dp(8).toFloat())
-                    )
-                }
-            )
-        } }
-        listOf(binding.toolbarText, binding.toolbarCode).forEach { dock ->
-            dock.layoutTransition = dockTransition()
-        }
-        // 面板的直接父容器：只处理面板项的渐显/渐隐（280ms 更有展开质感），
-        // CHANGING 交给外层容器统一播放，避免面板内部按钮状态变化触发多余的布局抖动。
-        listOf(binding.fullText, binding.fullCode).forEach { host ->
-            host.layoutTransition = LayoutTransition().apply {
-                setDuration(280)
-                val decel = DecelerateInterpolator()
-                setAnimator(
-                    LayoutTransition.APPEARING,
-                    AnimatorSet().apply {
-                        playTogether(
-                            ObjectAnimator.ofFloat(null, View.ALPHA, 0f, 1f),
-                            ObjectAnimator.ofFloat(null, View.TRANSLATION_Y, dp(12).toFloat(), 0f)
-                        )
-                    }
-                )
-                setAnimator(
-                    LayoutTransition.DISAPPEARING,
-                    AnimatorSet().apply {
-                        playTogether(
-                            ObjectAnimator.ofFloat(null, View.ALPHA, 1f, 0f),
-                            ObjectAnimator.ofFloat(null, View.TRANSLATION_Y, 0f, dp(8).toFloat())
-                        )
-                    }
-                )
-                setAnimator(LayoutTransition.CHANGING, null)
-                setAnimator(LayoutTransition.CHANGE_APPEARING, null)
-                setAnimator(LayoutTransition.CHANGE_DISAPPEARING, null)
-            }
-        }
-
-        // 全部可点元素附加按压缩放触感
+        // 全部格式按钮附加按压缩放触感
         listOf(
             binding.btnBack, binding.btnUndo, binding.btnRedo,
             binding.btnMore, binding.btnDone, binding.btnPreview,
             binding.btnTB, binding.btnTI, binding.btnTU, binding.btnTS,
+            binding.segTitle, binding.segSubtitle, binding.segHeading, binding.segBody,
+            binding.btnTodo, binding.btnUl, binding.btnOl, binding.btnQuote,
             binding.btnAlignL, binding.btnAlignC, binding.btnAlignR,
-            binding.btnPanelStyle, binding.btnPanelFormat,
-            binding.segTitle, binding.segSubtitle, binding.segHeading,
-            binding.segBody, binding.segCaption,
-            binding.btnSize, binding.btnColor, binding.btnHl, binding.btnFont,
-            binding.btnHr, binding.btnUl, binding.btnOl, binding.btnTodo, binding.btnQuote,
-            binding.btnOutdent, binding.btnIndent, binding.btnCode,
-            binding.btnLink, binding.btnImage, binding.btnClear,
-            binding.capsuleText, binding.capsuleCode,
-            binding.btnCIndent,
-            binding.btnCOutdent, binding.btnFormatCode, binding.btnClearCode,
-            binding.btnMoreCode,
+            binding.btnColor, binding.btnHl, binding.btnSize, binding.btnFont,
+            binding.btnLink, binding.btnImage, binding.btnCode, binding.btnHr,
+            binding.btnOutdent, binding.btnIndent, binding.btnClear,
+            binding.btnCIndent, binding.btnCOutdent, binding.btnFormatCode, binding.btnClearCode,
             binding.btnSnLink, binding.btnSnImage, binding.btnSnUl,
             binding.btnSnHr, binding.btnSnTodo, binding.btnSnCheck, binding.btnCopyAll
         ).forEach { it.attachPressScale(0.92f, 90L) }
@@ -411,43 +334,42 @@ class EditorActivity : AppCompatActivity() {
             updateMeta()
         }
 
-        // ---- 文字模式工具栏 ----
-        // 行内样式操作不再逐个弹 toast：按钮本身有选中态高亮，正文也立刻可见，
-        // 每按一次都弹一句提示纯属干扰，编辑时尤其明显
+        // ---- 文字模式格式工具栏（直观单层平铺，1-Tap 即达） ----
         binding.btnTB.setOnClickListener { exec("bold", null) }
         binding.btnTI.setOnClickListener { exec("italic", null) }
         binding.btnTU.setOnClickListener { exec("underline", null) }
         binding.btnTS.setOnClickListener { exec("strikeThrough", null) }
-        // S 按钮以删除线呈现，一眼看懂用途
         binding.btnTS.paintFlags = binding.btnTS.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
-        binding.btnAlignL.setOnClickListener { exec("justifyLeft", null) }
-        binding.btnAlignC.setOnClickListener { exec("justifyCenter", null) }
-        binding.btnAlignR.setOnClickListener { exec("justifyRight", null) }
-        // 两个格式面板互斥展开
-        binding.btnPanelStyle.setOnClickListener { togglePanel(binding.panelStyle, binding.btnPanelStyle) }
-        binding.btnPanelFormat.setOnClickListener { togglePanel(binding.panelFormat, binding.btnPanelFormat) }
 
-        // ---- 二级面板：段落 ----
         binding.segTitle.setOnClickListener { exec("formatBlock", "<h1>") }
         binding.segSubtitle.setOnClickListener { exec("formatBlock", "<h2>") }
         binding.segHeading.setOnClickListener { exec("formatBlock", "<h3>") }
         binding.segBody.setOnClickListener { exec("formatBlock", "<p>") }
-        binding.segCaption.setOnClickListener { exec("formatBlock", "<small>") }
 
-        // ---- 二级面板：低频格式 ----
-        binding.btnSize.setOnClickListener { pickSize() }
-        binding.btnColor.setOnClickListener { pickColor() }
-        binding.btnHl.setOnClickListener { exec("hiliteColor", "#FFEB3B") }
-        binding.btnFont.setOnClickListener { cycleFontFamily() }
-        binding.btnHr.setOnClickListener { exec("insertHorizontalRule", null); toast(R.string.toast_hr) }
-        binding.btnUl.setOnClickListener { exec("insertUnorderedList", null) }
-        binding.btnOl.setOnClickListener { exec("insertOrderedList", null) }
         binding.btnTodo.setOnClickListener {
             exec("insertHTML", "<div><input type=\"checkbox\"> &nbsp;</div>")
             toast(R.string.todo_menu)
         }
+        binding.btnUl.setOnClickListener { exec("insertUnorderedList", null) }
+        binding.btnOl.setOnClickListener { exec("insertOrderedList", null) }
         binding.btnQuote.setOnClickListener { exec("formatBlock", "<blockquote>") }
+
+        binding.btnAlignL.setOnClickListener { exec("justifyLeft", null) }
+        binding.btnAlignC.setOnClickListener { exec("justifyCenter", null) }
+        binding.btnAlignR.setOnClickListener { exec("justifyRight", null) }
+
+        binding.btnColor.setOnClickListener { pickColor() }
+        binding.btnHl.setOnClickListener { exec("hiliteColor", "#FFEB3B") }
+        binding.btnSize.setOnClickListener { pickSize() }
+        binding.btnFont.setOnClickListener { cycleFontFamily() }
+
+        binding.btnLink.setOnClickListener { insertLink() }
+        binding.btnImage.setOnClickListener { insertImage() }
+        binding.btnCode.setOnClickListener { exec("inlineCode", null) }
+        binding.btnHr.setOnClickListener { exec("insertHorizontalRule", null); toast(R.string.toast_hr) }
         binding.btnOutdent.setOnClickListener { exec("outdent", null) }
+        binding.btnIndent.setOnClickListener { exec("indent", null) }
+        binding.btnClear.setOnClickListener { exec("removeFormat", null); toast(R.string.rich_clear) }
         binding.btnIndent.setOnClickListener { exec("indent", null) }
         binding.btnCode.setOnClickListener { exec("inlineCode", null) }
         binding.btnLink.setOnClickListener { insertLink() }
@@ -466,7 +388,6 @@ class EditorActivity : AppCompatActivity() {
             toast(R.string.toast_format)
         }
         binding.btnClearCode.setOnClickListener { confirmClearCode() }
-        binding.btnMoreCode.setOnClickListener { togglePanel(binding.panelCode, binding.btnMoreCode) }
 
         // ---- 代码片段面板 ----
         binding.btnSnLink.setOnClickListener {
@@ -486,33 +407,7 @@ class EditorActivity : AppCompatActivity() {
         cursorKeeperDetach = CursorKeeper.attach(this, binding.edTitle, binding.edContent, binding.richWeb)
     }
 
-    // ---------------- 工具栏通用：面板折叠 / 短暂高亮 / 轻量 toast ----------------
-
-    /**
-     * 面板展开/收起：显隐交给工具栏容器的 LayoutTransition 播放「渐显 + 轻微上浮」过渡，
-     * 工具栏高度随之变化，正文区同步平滑让位。
-     * 文字模式的两个格式面板互斥，同时展开会把工具栏撑得过高、挤压正文。
-     */
-    private fun togglePanel(panel: View, trigger: View) {
-        val opening = panel.visibility != View.VISIBLE
-        if (opening) collapseSiblingsOf(panel)
-        panel.visibility = if (opening) View.VISIBLE else View.GONE
-        trigger.isSelected = opening
-    }
-
-    /** 收起与 [panel] 同组的面板，保证文字模式两个格式面板只展开一个（同样带过渡动画）。 */
-    private fun collapseSiblingsOf(panel: View) {
-        val pair = when (panel) {
-            binding.panelStyle -> binding.panelFormat to binding.btnPanelFormat
-            binding.panelFormat -> binding.panelStyle to binding.btnPanelStyle
-            else -> return
-        }
-        val (other, otherTrigger) = pair
-        if (other.visibility == View.VISIBLE) {
-            other.visibility = View.GONE
-            otherTrigger.isSelected = false
-        }
-    }
+    // ---------------- 工具栏通用：短暂高亮 / 轻量 toast ----------------
 
     /** 代码操作反馈：按钮短暂高亮 320ms 后回落。 */
     private fun flash(v: View) {
@@ -1062,8 +957,6 @@ class EditorActivity : AppCompatActivity() {
         bar.selCopy.setOnClickListener { copySelection(cut = false) }
         bar.selCut.setOnClickListener { copySelection(cut = true) }
         bar.selMore.setOnClickListener {
-            // 打开格式面板；面板长高会让正文变矮，随后的布局回调会再判一次锚定
-            togglePanel(binding.panelFormat, binding.btnPanelFormat)
             dismissSelectionBar()
         }
     }
@@ -1247,32 +1140,9 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
-    /** 当前展开着的二级面板高度；没有面板时返回 0，遮挡带随之消失。 */
-    private fun visiblePanelHeight(): Int {
-        val panel = when {
-            binding.panelStyle.visibility == View.VISIBLE -> binding.panelStyle
-            binding.panelFormat.visibility == View.VISIBLE -> binding.panelFormat
-            binding.panelCode.visibility == View.VISIBLE -> binding.panelCode
-            else -> return 0
-        }
-        return panel.height
-    }
+    private fun visiblePanelHeight(): Int = 0
 
-    /** 收起全部二级面板并复位它们的触发按钮选中态。 */
-    private fun closePanels() {
-        var changed = false
-        listOf(binding.panelStyle to binding.btnPanelStyle,
-            binding.panelFormat to binding.btnPanelFormat,
-            binding.panelCode to binding.btnMoreCode).forEach { (panel, trigger) ->
-            if (panel.visibility == View.VISIBLE) {
-                panel.visibility = View.GONE
-                trigger.isSelected = false
-                changed = true
-            }
-        }
-        // 面板高度归零后正文会立刻长回去，等这一轮布局落定再判一次锚定
-        if (changed) binding.root.post { evaluateAnchor() }
-    }
+    private fun closePanels() {}
 
     /** 光标处真实格式 → 底部工具栏与二级面板选中态实时同步。 */
     private fun syncRichToolbar(block: String?, statesJson: String?) {
@@ -1300,12 +1170,10 @@ class EditorActivity : AppCompatActivity() {
             "h2" -> 1
             "h3" -> 2
             "p", "div" -> 3
-            "small" -> 4
             else -> -1
         }
         val segments = listOf(
-            binding.segTitle, binding.segSubtitle, binding.segHeading,
-            binding.segBody, binding.segCaption
+            binding.segTitle, binding.segSubtitle, binding.segHeading, binding.segBody
         )
         segments.forEachIndexed { i, tv ->
             tv.isSelected = i == segIndex
@@ -1599,17 +1467,8 @@ class EditorActivity : AppCompatActivity() {
      */
     private fun updateDockMode(expanded: Boolean) {
         val isText = noteType == Project.TYPE_TEXT
-        // 背景与阴影挂在胶囊/完整条自己身上，父容器不挂任何背景：
-        // 这里只切形态，不再换父容器背景，展开时就不会整条磨砂条「啪」地出现
-        if (isText) {
-            binding.capsuleText.visibility = if (expanded) View.GONE else View.VISIBLE
-            binding.fullText.visibility = if (expanded) View.VISIBLE else View.GONE
-        } else {
-            binding.capsuleCode.visibility = if (expanded) View.GONE else View.VISIBLE
-            binding.fullCode.visibility = if (expanded) View.VISIBLE else View.GONE
-        }
-        // 形态切换由工具栏容器的 LayoutTransition 播放过渡（胶囊↔完整条渐变上浮/回落）
-        // 工具栏高度变了，浮条的下边界跟着变
+        binding.toolbarText.visibility = if (isText) View.VISIBLE else View.GONE
+        binding.toolbarCode.visibility = if (isText) View.GONE else View.VISIBLE
         updateSelectionBar()
     }
 
