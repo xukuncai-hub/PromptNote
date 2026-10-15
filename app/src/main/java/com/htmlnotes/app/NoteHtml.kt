@@ -105,10 +105,13 @@ object NoteHtml {
             "#ed table{width:100%;border-collapse:separate;border-spacing:0;margin:12px 0;font-size:14px;border:0.66px solid rgba(0,0,0,0.12);border-radius:6px;overflow:hidden;}" +
             "#ed th,#ed td{border:0.66px solid rgba(0,0,0,0.1);padding:8px 12px;text-align:left;}" +
             "#ed th{background:${p.quoteBg};font-weight:600;}" +
-            // ColorOS 16 官方 18px 待办复选框交互与穿透删除线
+            // ColorOS 16 官方待办复选框交互、顶端对齐与穿透删除线
             "#ed .task-item,#ed p:has(> input[type='checkbox']),#ed div:has(> input[type='checkbox']){" +
-            "display:flex;align-items:center;margin:6px 0;min-height:28px;list-style:none;}" +
-            "#ed input[type='checkbox']{margin-right:10px;width:18px;height:18px;border-radius:5px;accent-color:${p.accent};cursor:pointer;flex-shrink:0;vertical-align:-2px;}" +
+            "display:flex;align-items:flex-start;margin:6px 0;min-height:28px;list-style:none;}" +
+            "#ed input[type='checkbox']{position:relative;margin:3.5px 10px 0 0;width:18px;height:18px;border-radius:5px;" +
+            "accent-color:${p.accent};cursor:pointer;flex-shrink:0;vertical-align:middle;}" +
+            "#ed input[type='checkbox']::after{content:'';position:absolute;top:-8px;left:-8px;right:-8px;bottom:-8px;}" +
+            "#ed .task-item > span,#ed .task-item > div{flex:1;min-width:0;word-break:break-word;line-height:1.72;}" +
             "#ed input[type='checkbox']:checked ~ *{text-decoration:line-through;opacity:0.48;transition:opacity 0.18s ease;}" +
             // ColorOS 官方 4 色荧光马克笔高亮体系
             "#ed mark{background:#FFE22766;color:inherit;padding:1px 4px;border-radius:3px;}" +

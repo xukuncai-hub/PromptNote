@@ -809,7 +809,7 @@ class EditorActivity : AppCompatActivity() {
                         "var t=e.target;" +
                         "if(t&&t.tagName==='INPUT'&&t.type==='checkbox'){" +
                         "if(t.checked){t.setAttribute('checked','checked');}else{t.removeAttribute('checked');}" +
-                        "refreshState();HtmlNotes.onDirty();return;" +
+                        "refreshState();HtmlNotes.onDirty();HtmlNotes.onHapticTick();return;" +
                         "}" +
                         "if(t&&t.tagName==='IMG'){" +
                         "e.preventDefault();e.stopPropagation();" +
@@ -824,10 +824,25 @@ class EditorActivity : AppCompatActivity() {
                         "HtmlNotes.onImageClicked(t.id,t.src,align);return;" +
                         "}" +
                         "document.querySelectorAll('#ed img.selected').forEach(function(el){el.classList.remove('selected');});" +
+                        // 点击正文空白处或最下方：智能定位光标到最末尾或点击位置，杜绝光标跳到第一行
+                        "var lastEl=ed.lastElementChild;" +
+                        "while(lastEl&&(lastEl.classList.contains('img-drop-indicator')||lastEl.classList.contains('img-drag-avatar'))){lastEl=lastEl.previousElementSibling;}" +
+                        "if(lastEl){" +
+                        "var lastRect=lastEl.getBoundingClientRect();" +
+                        "if(e.clientY>lastRect.bottom+4){" +
+                        "var targetP=lastEl;" +
+                        "if(lastEl.tagName==='IMG'||lastEl.classList.contains('note-img-container')||(lastEl.textContent&&lastEl.textContent.trim()!=='')){" +
+                        "targetP=document.createElement('p');targetP.innerHTML='<br>';ed.appendChild(targetP);" +
+                        "}" +
+                        "var range=document.createRange();range.selectNodeContents(targetP);range.collapse(false);" +
+                        "var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);" +
+                        "ed.focus();refreshState();HtmlNotes.onDirty();HtmlNotes.onEditorTap();return;" +
+                        "}" +
+                        "}" +
                         "if(document.activeElement!==ed&&(!ed.contains(t)||t===document.body)){ed.focus();}" +
                         "HtmlNotes.onEditorTap();" +
                         "});" +
-                        // 稳健富文本内容注入器：选区存在则插入选区，选区丢失则智能追加末尾，永不丢图
+                        // 稳健富文本内容注入器：选区存在则插入选区，选区丢失则智能追加末尾，光标精准定位于新内容末尾
                         "window._insertHtml=function(html){" +
                         "var ed=document.getElementById('ed');ed.focus();" +
                         "var s=window.getSelection();" +
@@ -839,18 +854,71 @@ class EditorActivity : AppCompatActivity() {
                         "var frag=document.createDocumentFragment();var node,lastNode;" +
                         "while((node=el.firstChild)){lastNode=frag.appendChild(node);}" +
                         "r.insertNode(frag);" +
-                        "if(lastNode){var nr=document.createRange();nr.setStartAfter(lastNode);nr.collapse(true);s.removeAllRanges();s.addRange(nr);}" +
+                        "if(lastNode){" +
+                        "var nr=document.createRange();" +
+                        "if(lastNode.nodeType===1&&lastNode.tagName==='P'){" +
+                        "nr.selectNodeContents(lastNode);nr.collapse(true);" +
+                        "}else{" +
+                        "nr.setStartAfter(lastNode);nr.collapse(true);" +
+                        "}" +
+                        "s.removeAllRanges();s.addRange(nr);" +
+                        "}" +
                         "refreshState();HtmlNotes.onDirty();return;" +
                         "}" +
                         "}" +
                         "var el=document.createElement('div');el.innerHTML=html;" +
-                        "while(el.firstChild){ed.appendChild(el.firstChild);}" +
+                        "var lastNode;" +
+                        "while(el.firstChild){lastNode=ed.appendChild(el.firstChild);}" +
+                        "if(lastNode){" +
+                        "var nr=document.createRange();" +
+                        "if(lastNode.nodeType===1&&lastNode.tagName==='P'){" +
+                        "nr.selectNodeContents(lastNode);nr.collapse(true);" +
+                        "}else{" +
+                        "nr.setStartAfter(lastNode);nr.collapse(true);" +
+                        "}" +
+                        "var s2=window.getSelection();s2.removeAllRanges();s2.addRange(nr);" +
+                        "}" +
                         "refreshState();HtmlNotes.onDirty();" +
                         "};" +
-                        // 外接键盘快捷键。必须在页面里拦：Ctrl+X 之后的键事件早就被 IME/WebView 吃掉，
-                        // 原生 onKeyDown 根本收不到。capture 挂在 document 上，赶在浏览器默认动作之前
-                        // 抹掉它，否则 execCommand 会跟内置处理各翻一次加粗，等于没按。
+                        // 键盘按键与待办清单联动（Enter 智能换行/退出待办，Backspace 智能退格）
                         "document.addEventListener('keydown',function(e){" +
+                        "if(e.key==='Enter'&&!e.shiftKey&&!e.ctrlKey&&!e.metaKey){" +
+                        "var s=window.getSelection();if(s&&s.rangeCount>0){" +
+                        "var anc=s.anchorNode;var taskItem=anc?(anc.nodeType===1?anc:anc.parentElement):null;" +
+                        "while(taskItem&&taskItem!==ed&&!taskItem.classList.contains('task-item')){taskItem=taskItem.parentElement;}" +
+                        "if(taskItem&&taskItem.classList.contains('task-item')){" +
+                        "e.preventDefault();" +
+                        "var text=taskItem.textContent.replace(/\\s+/g,'');" +
+                        "if(!text){" +
+                        "var p=document.createElement('p');p.innerHTML='<br>';taskItem.parentNode.replaceChild(p,taskItem);" +
+                        "var nr=document.createRange();nr.selectNodeContents(p);nr.collapse(true);s.removeAllRanges();s.addRange(nr);" +
+                        "}else{" +
+                        "var newTodo=document.createElement('p');newTodo.className='task-item';" +
+                        "newTodo.innerHTML='<input type=\"checkbox\"><span>&nbsp;</span>';" +
+                        "taskItem.parentNode.insertBefore(newTodo,taskItem.nextSibling);" +
+                        "var span=newTodo.querySelector('span')||newTodo;" +
+                        "var nr=document.createRange();nr.selectNodeContents(span);nr.collapse(true);s.removeAllRanges();s.addRange(nr);" +
+                        "}" +
+                        "refreshState();HtmlNotes.onDirty();return;" +
+                        "}" +
+                        "}" +
+                        "}" +
+                        "if(e.key==='Backspace'&&!e.shiftKey&&!e.ctrlKey&&!e.metaKey){" +
+                        "var s=window.getSelection();if(s&&s.rangeCount>0&&s.isCollapsed){" +
+                        "var anc=s.anchorNode;var taskItem=anc?(anc.nodeType===1?anc:anc.parentElement):null;" +
+                        "while(taskItem&&taskItem!==ed&&!taskItem.classList.contains('task-item')){taskItem=taskItem.parentElement;}" +
+                        "if(taskItem&&taskItem.classList.contains('task-item')){" +
+                        "var range=s.getRangeAt(0);var pre=document.createRange();pre.setStart(taskItem,0);pre.setEnd(range.startContainer,range.startOffset);" +
+                        "if(!pre.toString().replace(/\\s+/g,'')){" +
+                        "e.preventDefault();var cb=taskItem.querySelector('input[type=checkbox]');if(cb)cb.remove();" +
+                        "taskItem.classList.remove('task-item');" +
+                        "if(!taskItem.innerHTML.trim()){taskItem.innerHTML='<br>';}" +
+                        "var nr=document.createRange();nr.selectNodeContents(taskItem);nr.collapse(true);s.removeAllRanges();s.addRange(nr);" +
+                        "refreshState();HtmlNotes.onDirty();return;" +
+                        "}" +
+                        "}" +
+                        "}" +
+                        "}" +
                         "if(!(e.ctrlKey||e.metaKey)||e.altKey)return;" +
                         "var k=(e.key||'').toLowerCase(),m='';" +
                         "if(k==='b')m='bold';else if(k==='i')m='italic';else if(k==='u')m='underline';" +
@@ -1309,11 +1377,12 @@ class EditorActivity : AppCompatActivity() {
 
     private fun parseSelRect(json: String): SelRect? = try {
         val a = JSONArray(json)
+        val d = resources.displayMetrics.density
         SelRect(
-            left = a.getInt(0),
-            top = a.getInt(1),
-            width = a.getInt(2),
-            height = a.getInt(3),
+            left = (a.getDouble(0) * d).toInt(),
+            top = (a.getDouble(1) * d).toInt(),
+            width = (a.getDouble(2) * d).toInt(),
+            height = (a.getDouble(3) * d).toInt(),
             collapsed = a.getInt(4) == 1
         )
     } catch (e: Exception) {
@@ -1347,6 +1416,9 @@ class EditorActivity : AppCompatActivity() {
         // 下划线没有对应的 XML 属性（TextView 的 styleable 里没有 paintFlags），只能在代码里设
         bar.selUnderline.paintFlags = bar.selUnderline.paintFlags or Paint.UNDERLINE_TEXT_FLAG
 
+        listOf(bar.selBold, bar.selItalic, bar.selUnderline, bar.selSelectAll, bar.selCopy, bar.selCut, bar.selMore)
+            .forEach { it.applyColorOsPressAnim(0.92f) }
+
         bar.selBold.setOnClickListener { exec("bold") }
         bar.selItalic.setOnClickListener { exec("italic") }
         bar.selUnderline.setOnClickListener { exec("underline") }
@@ -1355,6 +1427,9 @@ class EditorActivity : AppCompatActivity() {
         bar.selCut.setOnClickListener { copySelection(cut = true) }
         bar.selMore.setOnClickListener {
             dismissSelectionBar()
+            if (binding.panelTextBlock.visibility != View.VISIBLE) {
+                toggleAaPanel()
+            }
         }
     }
 
@@ -1932,7 +2007,20 @@ class EditorActivity : AppCompatActivity() {
         if (noteType == Project.TYPE_TEXT) {
             binding.richWeb.requestFocus()
             binding.richWeb.evaluateJavascript(
-                "var ed=document.getElementById('ed');if(ed)ed.focus();", null
+                "(function(){" +
+                "var ed=document.getElementById('ed');if(!ed)return;" +
+                "ed.focus();" +
+                "var s=window.getSelection();" +
+                "if(!s.rangeCount||s.isCollapsed){" +
+                "var last=ed.lastElementChild;" +
+                "while(last&&(last.classList.contains('img-drop-indicator')||last.classList.contains('img-drag-avatar'))){last=last.previousElementSibling;}" +
+                "if(last){" +
+                "var r=document.createRange();r.selectNodeContents(last);r.collapse(false);" +
+                "s.removeAllRanges();s.addRange(r);" +
+                "}" +
+                "}" +
+                "refreshState();" +
+                "})();", null
             )
             imm?.showSoftInput(binding.richWeb, InputMethodManager.SHOW_IMPLICIT)
             ViewCompat.getWindowInsetsController(binding.richWeb)
