@@ -89,6 +89,16 @@ object NoteHtml {
             "transition:outline 0.18s ease,transform 0.18s cubic-bezier(0.3,0,0.1,1),box-shadow 0.18s ease;" +
             "-webkit-user-select:none;user-select:none;}" +
             "#ed img.selected{outline:3.5px solid ${p.accent};outline-offset:3px;transform:scale(0.985);box-shadow:0 4px 16px rgba(0,0,0,0.16);}" +
+            // 图片对齐模式：居中 / 靠左 / 靠右 / 铺满
+            "#ed img.align-left{margin-left:0;margin-right:auto;}" +
+            "#ed img.align-center{margin-left:auto;margin-right:auto;}" +
+            "#ed img.align-right{margin-left:auto;margin-right:0;}" +
+            "#ed img.align-full{width:100%!important;max-width:100%!important;margin:14px 0;border-radius:10px;max-height:520px;object-fit:cover;}" +
+            // 图片拖动排序视觉反馈
+            "#ed img.drag-source{opacity:0.28!important;outline:2.5px dashed ${p.accent}!important;outline-offset:2px;transform:scale(0.96);}" +
+            ".img-drag-avatar{position:fixed;z-index:99999;pointer-events:none;max-width:240px;max-height:160px;object-fit:contain;border-radius:12px;border:2.5px solid ${p.accent};box-shadow:0 12px 32px rgba(0,0,0,0.32),0 4px 12px rgba(0,0,0,0.16);opacity:0.92;transform:translate(-50%,-50%) scale(1.04);transition:transform 0.08s ease;background:${p.bg};}" +
+            ".img-drop-indicator{height:4px;background:${p.accent};border-radius:2px;margin:10px 0;box-shadow:0 0 10px ${p.accent};pointer-events:none;animation:pulseDropLine 1.2s infinite ease-in-out;}" +
+            "@keyframes pulseDropLine{0%,100%{opacity:0.75;transform:scaleY(1);}50%{opacity:1;transform:scaleY(1.4);}}" +
             "#ed .note-img-container{text-align:center;margin:12px 0;}" +
             "#ed pre{white-space:pre-wrap;word-break:break-word;margin:12px 0;background:${p.quoteBg};padding:12px 14px;border-radius:8px;}" +
             // ColorOS 风格表格 (0.66px 细边框 + 圆角)

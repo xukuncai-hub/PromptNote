@@ -18,6 +18,7 @@ import android.os.Handler
 import android.os.Looper
 import android.text.InputType
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
@@ -663,19 +664,138 @@ class EditorActivity : AppCompatActivity() {
                         "ed.addEventListener('mouseup',refreshState);" +
                         // 光标/选区变化实时刷新工具栏状态，告别状态滞后
                         "document.addEventListener('selectionchange',refreshState);" +
-                        // 跟踪触控移动与滚动，彻底杜绝浏览/滑动手势误触发点击与键盘弹出
+                        // DOM 块级元素识别与图片容器包裹辅助函数
+                        "function getTopBlock(node,ed){" +
+                        "if(!node||node===ed)return null;" +
+                        "var cur=(node.nodeType===3)?node.parentElement:node;" +
+                        "if(!cur||!ed.contains(cur))return null;" +
+                        "while(cur&&cur.parentElement&&cur.parentElement!==ed){cur=cur.parentElement;}" +
+                        "return cur;" +
+                        "}" +
+                        "window.getTopBlock=getTopBlock;" +
+                        "function getImageBlock(img,ed){" +
+                        "if(!img||!ed.contains(img))return null;" +
+                        "var p=img.parentElement;" +
+                        "if(p===ed)return img;" +
+                        "var isSoleChild=true;" +
+                        "for(var i=0;i<p.childNodes.length;i++){" +
+                        "var cn=p.childNodes[i];" +
+                        "if(cn===img)continue;" +
+                        "if(cn.nodeType===3&&cn.textContent.trim()==='')continue;" +
+                        "if(cn.nodeType===1&&(cn.tagName==='BR'||cn.classList.contains('img-drop-indicator')))continue;" +
+                        "isSoleChild=false;break;" +
+                        "}" +
+                        "if(isSoleChild&&p.parentElement===ed)return p;" +
+                        "if(isSoleChild&&p.parentElement&&p.parentElement!==ed)return getTopBlock(p,ed);" +
+                        "var container=document.createElement('p');container.className='note-img-container';" +
+                        "img.parentNode.insertBefore(container,img);container.appendChild(img);" +
+                        "return container;" +
+                        "}" +
+                        "window.getImageBlock=getImageBlock;" +
+                        // 跟踪触控移动、长按拖拽与页面滚动
                         "var _touchStartX=0,_touchStartY=0,_isScrolling=false,_lastScrollTime=0,_lastScrollY=0;" +
+                        "var _dragImg=null,_dragTimer=null,_isDragging=false,_dragAvatar=null,_dropIndicator=null;" +
+                        "var _currentDropTarget=null,_dropInsertBefore=true,_lastDragEndTime=0;" +
+                        "var _autoScrollTimer=null,_autoScrollSpeed=0,_lastTouchX=0,_lastTouchY=0;" +
+                        "function stopAutoScroll(){if(_autoScrollTimer){clearInterval(_autoScrollTimer);_autoScrollTimer=null;}}" +
+                        "function startAutoScroll(){" +
+                        "if(_autoScrollTimer)return;" +
+                        "_autoScrollTimer=setInterval(function(){" +
+                        "if(!_isDragging){stopAutoScroll();return;}" +
+                        "window.scrollBy(0,_autoScrollSpeed);" +
+                        "updateDropIndicator(_lastTouchX,_lastTouchY);" +
+                        "},16);" +
+                        "}" +
+                        "function updateDropIndicator(cx,cy){" +
+                        "if(!_isDragging||!_dragImg)return;" +
+                        "var el=document.elementFromPoint(cx,cy);" +
+                        "if(!el)return;" +
+                        "var targetBlock=getTopBlock(el,ed);" +
+                        "if(!targetBlock||targetBlock===_dropIndicator)return;" +
+                        "var rect=targetBlock.getBoundingClientRect();" +
+                        "var insertBefore=(cy<(rect.top+rect.height/2));" +
+                        "if(targetBlock!==_currentDropTarget||insertBefore!==_dropInsertBefore){" +
+                        "_currentDropTarget=targetBlock;_dropInsertBefore=insertBefore;" +
+                        "if(!_dropIndicator){_dropIndicator=document.createElement('div');_dropIndicator.className='img-drop-indicator';}" +
+                        "if(insertBefore){targetBlock.parentNode.insertBefore(_dropIndicator,targetBlock);}" +
+                        "else{targetBlock.parentNode.insertBefore(_dropIndicator,targetBlock.nextSibling);}" +
+                        "HtmlNotes.onHapticTick();" +
+                        "}" +
+                        "}" +
+                        "function startImageDrag(img,startX,startY){" +
+                        "_isDragging=true;_dragTimer=null;" +
+                        "HtmlNotes.onImageDragStart();" +
+                        "if(document.activeElement&&document.activeElement.blur){document.activeElement.blur();}" +
+                        "document.querySelectorAll('#ed img.selected').forEach(function(el){el.classList.remove('selected');});" +
+                        "img.classList.add('drag-source');" +
+                        "if(_dragAvatar&&_dragAvatar.parentNode)_dragAvatar.parentNode.removeChild(_dragAvatar);" +
+                        "_dragAvatar=document.createElement('img');_dragAvatar.src=img.src;_dragAvatar.className='img-drag-avatar';" +
+                        "_dragAvatar.style.left=startX+'px';_dragAvatar.style.top=startY+'px';" +
+                        "document.body.appendChild(_dragAvatar);" +
+                        "var block=getImageBlock(img,ed);" +
+                        "if(!_dropIndicator){_dropIndicator=document.createElement('div');_dropIndicator.className='img-drop-indicator';}" +
+                        "if(block&&block.parentNode){block.parentNode.insertBefore(_dropIndicator,block);}" +
+                        "}" +
                         "window.addEventListener('touchstart',function(e){" +
-                        "if(e.touches&&e.touches.length){_touchStartX=e.touches[0].clientX;_touchStartY=e.touches[0].clientY;}" +
+                        "if(!e.touches||!e.touches.length)return;" +
+                        "_touchStartX=e.touches[0].clientX;_touchStartY=e.touches[0].clientY;" +
                         "_isScrolling=false;" +
-                        "},{passive:true});" +
-                        "window.addEventListener('touchmove',function(e){" +
-                        "if(e.touches&&e.touches.length){" +
-                        "var dx=Math.abs(e.touches[0].clientX-_touchStartX);" +
-                        "var dy=Math.abs(e.touches[0].clientY-_touchStartY);" +
-                        "if(dx>6||dy>6){_isScrolling=true;}" +
+                        "if(_dragTimer){clearTimeout(_dragTimer);_dragTimer=null;}" +
+                        "var t=e.target;" +
+                        "if(t&&t.tagName==='IMG'&&ed.contains(t)){" +
+                        "_dragImg=t;" +
+                        "_dragTimer=setTimeout(function(){startImageDrag(t,_touchStartX,_touchStartY);},280);" +
                         "}" +
                         "},{passive:true});" +
+                        "window.addEventListener('touchmove',function(e){" +
+                        "if(!e.touches||!e.touches.length)return;" +
+                        "var cx=e.touches[0].clientX,cy=e.touches[0].clientY;" +
+                        "_lastTouchX=cx;_lastTouchY=cy;" +
+                        "if(!_isDragging){" +
+                        "var dx=Math.abs(cx-_touchStartX);var dy=Math.abs(cy-_touchStartY);" +
+                        "if(dx>6||dy>6){_isScrolling=true;if(_dragTimer){clearTimeout(_dragTimer);_dragTimer=null;}}" +
+                        "}else{" +
+                        "if(e.cancelable)e.preventDefault();" +
+                        "if(_dragAvatar){_dragAvatar.style.left=cx+'px';_dragAvatar.style.top=cy+'px';}" +
+                        "var edgeMargin=72;" +
+                        "if(cy<edgeMargin){_autoScrollSpeed=-Math.max(6,Math.round((edgeMargin-cy)/4));startAutoScroll();}" +
+                        "else if(cy>window.innerHeight-edgeMargin){_autoScrollSpeed=Math.max(6,Math.round((cy-(window.innerHeight-edgeMargin))/4));startAutoScroll();}" +
+                        "else{stopAutoScroll();}" +
+                        "updateDropIndicator(cx,cy);" +
+                        "}" +
+                        "},{passive:false});" +
+                        "window.addEventListener('touchend',function(e){" +
+                        "if(_dragTimer){clearTimeout(_dragTimer);_dragTimer=null;}" +
+                        "if(_isDragging){" +
+                        "_isDragging=false;_lastDragEndTime=Date.now();stopAutoScroll();" +
+                        "if(_dragAvatar&&_dragAvatar.parentNode){_dragAvatar.parentNode.removeChild(_dragAvatar);_dragAvatar=null;}" +
+                        "if(_dragImg){_dragImg.classList.remove('drag-source');}" +
+                        "var moved=false;" +
+                        "if(_dropIndicator&&_dropIndicator.parentNode&&_dragImg){" +
+                        "var block=getImageBlock(_dragImg,ed);" +
+                        "if(block&&block.parentNode){" +
+                        "if(_dropIndicator.nextSibling!==block&&_dropIndicator.previousSibling!==block){" +
+                        "_dropIndicator.parentNode.insertBefore(block,_dropIndicator);moved=true;" +
+                        "}else if(_dropIndicator.nextSibling!==block){" +
+                        "_dropIndicator.parentNode.insertBefore(block,_dropIndicator);moved=true;" +
+                        "}" +
+                        "}" +
+                        "_dropIndicator.parentNode.removeChild(_dropIndicator);_dropIndicator=null;" +
+                        "}" +
+                        "_currentDropTarget=null;_dragImg=null;" +
+                        "refreshState();HtmlNotes.onDirty();HtmlNotes.onImageDragEnd(moved);" +
+                        "}" +
+                        "},{passive:true});" +
+                        "window.addEventListener('touchcancel',function(e){" +
+                        "if(_dragTimer){clearTimeout(_dragTimer);_dragTimer=null;}" +
+                        "if(_isDragging){" +
+                        "_isDragging=false;_lastDragEndTime=Date.now();stopAutoScroll();" +
+                        "if(_dragAvatar&&_dragAvatar.parentNode){_dragAvatar.parentNode.removeChild(_dragAvatar);_dragAvatar=null;}" +
+                        "if(_dragImg){_dragImg.classList.remove('drag-source');_dragImg=null;}" +
+                        "if(_dropIndicator&&_dropIndicator.parentNode){_dropIndicator.parentNode.removeChild(_dropIndicator);_dropIndicator=null;}" +
+                        "_currentDropTarget=null;HtmlNotes.onImageDragEnd(false);" +
+                        "}" +
+                        "});" +
                         "window.addEventListener('scroll',function(){" +
                         "_isScrolling=true;_lastScrollTime=Date.now();" +
                         "var curY=window.scrollY||document.documentElement.scrollTop||0;" +
@@ -685,7 +805,7 @@ class EditorActivity : AppCompatActivity() {
                         "},true);" +
                         // 点击事件：精准区分复选框、图片与正文聚焦（滑动与惯性制动绝对不误触发）
                         "document.addEventListener('click',function(e){" +
-                        "if(_isScrolling||(Date.now()-_lastScrollTime<350)){return;}" +
+                        "if(_isScrolling||_isDragging||(Date.now()-_lastScrollTime<350)||(Date.now()-_lastDragEndTime<400)){return;}" +
                         "var t=e.target;" +
                         "if(t&&t.tagName==='INPUT'&&t.type==='checkbox'){" +
                         "if(t.checked){t.setAttribute('checked','checked');}else{t.removeAttribute('checked');}" +
@@ -697,7 +817,11 @@ class EditorActivity : AppCompatActivity() {
                         "document.querySelectorAll('#ed img.selected').forEach(function(el){el.classList.remove('selected');});" +
                         "t.classList.add('selected');" +
                         "if(!t.id){t.id='img_'+Date.now();}" +
-                        "HtmlNotes.onImageClicked(t.id,t.src);return;" +
+                        "var align='center';" +
+                        "if(t.classList.contains('align-left'))align='left';" +
+                        "else if(t.classList.contains('align-right'))align='right';" +
+                        "else if(t.classList.contains('align-full'))align='full';" +
+                        "HtmlNotes.onImageClicked(t.id,t.src,align);return;" +
                         "}" +
                         "document.querySelectorAll('#ed img.selected').forEach(function(el){el.classList.remove('selected');});" +
                         "if(document.activeElement!==ed&&(!ed.contains(t)||t===document.body)){ed.focus();}" +
@@ -1088,12 +1212,59 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        /** 用户轻触图片：弹出图片操作面板（查看大图、前后插入正文、替换、删除），不误弹软键盘 */
+        /** 用户轻触图片：弹出图片操作面板（查看大图、前后插入正文、替换、对齐、删除），不误弹软键盘 */
         @JavascriptInterface
         fun onImageClicked(imgId: String, src: String) {
+            onImageClicked(imgId, src, "center")
+        }
+
+        @JavascriptInterface
+        fun onImageClicked(imgId: String, src: String, align: String) {
             runOnUiThread {
                 if (isFinishing || isDestroyed) return@runOnUiThread
-                showImageActionSheet(imgId, src)
+                showImageActionSheet(imgId, src, align)
+            }
+        }
+
+        /** 图像开始长按拖拽：触发触觉震动反馈，收起键盘与浮条 */
+        @JavascriptInterface
+        fun onImageDragStart() {
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                binding.richWeb.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.hideSoftInputFromWindow(binding.richWeb.windowToken, 0)
+                dismissSelectionBar()
+            }
+        }
+
+        /** 图像拖动经过不同组件/段落：轻触震动反馈 (ColorOS Aquamorphic 物理触感) */
+        @JavascriptInterface
+        fun onHapticTick() {
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O_MR1) {
+                    binding.richWeb.performHapticFeedback(HapticFeedbackConstants.TEXT_HANDLE_MOVE)
+                } else {
+                    binding.richWeb.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                }
+            }
+        }
+
+        /** 图像拖动结束：移动成功则触发确认震动与轻提示 */
+        @JavascriptInterface
+        fun onImageDragEnd(moved: Boolean) {
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                if (moved) {
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        binding.richWeb.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                    } else {
+                        binding.richWeb.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    }
+                    toast(R.string.toast_image_moved)
+                    markDirty()
+                }
             }
         }
 
@@ -1890,7 +2061,7 @@ class EditorActivity : AppCompatActivity() {
     }
 
     /** 弹出图片交互与排版操作底栏 */
-    private fun showImageActionSheet(imgId: String, src: String) {
+    private fun showImageActionSheet(imgId: String, src: String, align: String = "center") {
         val sheet = SheetImageActionBinding.inflate(layoutInflater)
         val dialog = BottomSheetDialog(this)
         dialog.setContentView(sheet.root)
@@ -1905,11 +2076,43 @@ class EditorActivity : AppCompatActivity() {
         // 触控缩放微动效
         listOf(
             sheet.itemActionViewFull,
+            sheet.itemActionMoveUp,
+            sheet.itemActionMoveDown,
             sheet.itemActionInsertAbove,
             sheet.itemActionInsertBelow,
             sheet.itemActionReplace,
             sheet.itemActionDelete
         ).forEach { it.applyColorOsPressAnim(0.96f) }
+
+        // 对齐方式分段选择器初始化与事件
+        fun updateAlignSegment(active: View) {
+            listOf(sheet.segAlignCenter, sheet.segAlignLeft, sheet.segAlignRight, sheet.segAlignFull).forEach {
+                it.isSelected = (it == active)
+            }
+        }
+        when (align) {
+            "left" -> updateAlignSegment(sheet.segAlignLeft)
+            "right" -> updateAlignSegment(sheet.segAlignRight)
+            "full" -> updateAlignSegment(sheet.segAlignFull)
+            else -> updateAlignSegment(sheet.segAlignCenter)
+        }
+
+        sheet.segAlignCenter.setOnClickListener {
+            updateAlignSegment(sheet.segAlignCenter)
+            setImageAlign(imgId, "align-center")
+        }
+        sheet.segAlignLeft.setOnClickListener {
+            updateAlignSegment(sheet.segAlignLeft)
+            setImageAlign(imgId, "align-left")
+        }
+        sheet.segAlignRight.setOnClickListener {
+            updateAlignSegment(sheet.segAlignRight)
+            setImageAlign(imgId, "align-right")
+        }
+        sheet.segAlignFull.setOnClickListener {
+            updateAlignSegment(sheet.segAlignFull)
+            setImageAlign(imgId, "align-full")
+        }
 
         // 1. 查看大图
         sheet.itemActionViewFull.setOnClickListener {
@@ -1917,22 +2120,75 @@ class EditorActivity : AppCompatActivity() {
             showFullScreenImageViewer(src)
         }
 
+        // 上移一行
+        sheet.itemActionMoveUp.setOnClickListener {
+            dialog.dismiss()
+            val js = "(function(){" +
+                "var ed=document.getElementById('ed');" +
+                "var img=document.getElementById(${JSONObject.quote(imgId)});" +
+                "if(!ed||!img)return false;" +
+                "var block=getImageBlock(img,ed);" +
+                "if(!block||!block.parentNode)return false;" +
+                "var prev=block.previousElementSibling;" +
+                "while(prev&&prev.classList.contains('img-drop-indicator')){prev=prev.previousElementSibling;}" +
+                "if(prev){" +
+                "block.parentNode.insertBefore(block,prev);" +
+                "refreshState();HtmlNotes.onDirty();return true;" +
+                "}" +
+                "return false;" +
+                "})();"
+            binding.richWeb.evaluateJavascript(js) { res ->
+                if (res == "true" || res == "\"true\"") {
+                    binding.richWeb.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    toast(R.string.toast_image_moved)
+                    markDirty()
+                }
+            }
+        }
+
+        // 下移一行
+        sheet.itemActionMoveDown.setOnClickListener {
+            dialog.dismiss()
+            val js = "(function(){" +
+                "var ed=document.getElementById('ed');" +
+                "var img=document.getElementById(${JSONObject.quote(imgId)});" +
+                "if(!ed||!img)return false;" +
+                "var block=getImageBlock(img,ed);" +
+                "if(!block||!block.parentNode)return false;" +
+                "var next=block.nextElementSibling;" +
+                "while(next&&next.classList.contains('img-drop-indicator')){next=next.nextElementSibling;}" +
+                "if(next){" +
+                "block.parentNode.insertBefore(block,next.nextElementSibling);" +
+                "refreshState();HtmlNotes.onDirty();return true;" +
+                "}" +
+                "return false;" +
+                "})();"
+            binding.richWeb.evaluateJavascript(js) { res ->
+                if (res == "true" || res == "\"true\"") {
+                    binding.richWeb.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                    toast(R.string.toast_image_moved)
+                    markDirty()
+                }
+            }
+        }
+
         // 2. 在上方换行输入文字
         sheet.itemActionInsertAbove.setOnClickListener {
             dialog.dismiss()
             val js = "(function(){" +
+                "var ed=document.getElementById('ed');" +
                 "var img=document.getElementById(${JSONObject.quote(imgId)});" +
-                "if(!img)return;" +
+                "if(!ed||!img)return;" +
+                "var block=getImageBlock(img,ed);" +
                 "var p=document.createElement('p');p.innerHTML='<br>';" +
-                "var parent=img.parentElement;" +
-                "if(parent&&parent.id!=='ed'&&parent.children.length===1){" +
-                "parent.parentElement.insertBefore(p,parent);" +
+                "if(block&&block.parentNode){" +
+                "block.parentNode.insertBefore(p,block);" +
                 "}else{" +
                 "img.parentElement.insertBefore(p,img);" +
                 "}" +
                 "var r=document.createRange();r.setStart(p,0);r.collapse(true);" +
                 "var s=window.getSelection();s.removeAllRanges();s.addRange(r);" +
-                "document.getElementById('ed').focus();" +
+                "ed.focus();" +
                 "refreshState();HtmlNotes.onDirty();HtmlNotes.onEditorTap();" +
                 "})();"
             binding.richWeb.evaluateJavascript(js, null)
@@ -1942,18 +2198,19 @@ class EditorActivity : AppCompatActivity() {
         sheet.itemActionInsertBelow.setOnClickListener {
             dialog.dismiss()
             val js = "(function(){" +
+                "var ed=document.getElementById('ed');" +
                 "var img=document.getElementById(${JSONObject.quote(imgId)});" +
-                "if(!img)return;" +
+                "if(!ed||!img)return;" +
+                "var block=getImageBlock(img,ed);" +
                 "var p=document.createElement('p');p.innerHTML='<br>';" +
-                "var parent=img.parentElement;" +
-                "if(parent&&parent.id!=='ed'&&parent.children.length===1){" +
-                "parent.parentElement.insertBefore(p,parent.nextSibling);" +
+                "if(block&&block.parentNode){" +
+                "block.parentNode.insertBefore(p,block.nextElementSibling);" +
                 "}else{" +
                 "img.parentElement.insertBefore(p,img.nextSibling);" +
                 "}" +
                 "var r=document.createRange();r.setStart(p,0);r.collapse(true);" +
                 "var s=window.getSelection();s.removeAllRanges();s.addRange(r);" +
-                "document.getElementById('ed').focus();" +
+                "ed.focus();" +
                 "refreshState();HtmlNotes.onDirty();HtmlNotes.onEditorTap();" +
                 "})();"
             binding.richWeb.evaluateJavascript(js, null)
@@ -1970,12 +2227,14 @@ class EditorActivity : AppCompatActivity() {
         sheet.itemActionDelete.setOnClickListener {
             dialog.dismiss()
             val js = "(function(){" +
+                "var ed=document.getElementById('ed');" +
                 "var img=document.getElementById(${JSONObject.quote(imgId)});" +
-                "if(!img)return;" +
-                "var parent=img.parentElement;" +
+                "if(!ed||!img)return;" +
+                "var block=getImageBlock(img,ed);" +
+                "if(block&&block!==img){" +
+                "block.remove();" +
+                "}else{" +
                 "img.remove();" +
-                "if(parent&&parent.id!=='ed'&&parent.children.length===0&&(!parent.innerText||parent.innerText.trim()==='')){" +
-                "parent.remove();" +
                 "}" +
                 "refreshState();HtmlNotes.onDirty();" +
                 "})();"
@@ -1989,6 +2248,24 @@ class EditorActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    private fun setImageAlign(imgId: String, alignClass: String) {
+        val js = "(function(){" +
+            "var img=document.getElementById(${JSONObject.quote(imgId)});" +
+            "if(!img)return;" +
+            "img.classList.remove('align-left','align-center','align-right','align-full');" +
+            "img.classList.add(${JSONObject.quote(alignClass)});" +
+            "var p=img.parentElement;" +
+            "if(p&&p.classList.contains('note-img-container')){" +
+            "if(${JSONObject.quote(alignClass)}==='align-left')p.style.textAlign='left';" +
+            "else if(${JSONObject.quote(alignClass)}==='align-right')p.style.textAlign='right';" +
+            "else p.style.textAlign='center';" +
+            "}" +
+            "refreshState();HtmlNotes.onDirty();" +
+            "})();"
+        binding.richWeb.evaluateJavascript(js, null)
+        markDirty()
     }
 
     /** 沉浸式全屏原图查看器 */
