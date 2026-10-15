@@ -607,22 +607,23 @@ class EditorActivity : AppCompatActivity() {
     private fun loadRichContent(content: String) {
         setupRichWeb(content)
         binding.richWeb.loadDataWithBaseURL(null, NoteHtml.editorPage(NoteHtml.paletteOf(this)), "text/html", "UTF-8", null)
-        val task = Runnable {
-            // 视图本身也要 requestFocus：只调 JS 的 ed.focus() 时，DOM 拿到了焦点、
-            // 键盘也会弹出，但 WebView 视图没有输入焦点，光标不会绘制 ——
-            // 表现就是打开便签看不到光标，得先点一下正文才出现。
-            binding.richWeb.requestFocus()
-            binding.richWeb.evaluateJavascript(
-                "var ed=document.getElementById('ed');ed.focus();" +
-                    "var r=document.createRange();r.selectNodeContents(ed);r.collapse(false);" +
-                    "var s=getSelection();s.removeAllRanges();s.addRange(r);",
-                null
-            )
-            ViewCompat.getWindowInsetsController(binding.richWeb)
-                ?.show(WindowInsetsCompat.Type.ime())
+        // 仅在新创便签（projectId == null）时延时自动聚焦并弹键盘；
+        // 现有便签打开时不强行把光标拉到末尾或弹键盘，避免破坏用户刚点击定位的位置。
+        if (projectId == null) {
+            val task = Runnable {
+                binding.richWeb.requestFocus()
+                binding.richWeb.evaluateJavascript(
+                    "var ed=document.getElementById('ed');if(ed){ed.focus();" +
+                        "var r=document.createRange();r.selectNodeContents(ed);r.collapse(false);" +
+                        "var s=getSelection();s.removeAllRanges();s.addRange(r);}",
+                    null
+                )
+                ViewCompat.getWindowInsetsController(binding.richWeb)
+                    ?.show(WindowInsetsCompat.Type.ime())
+            }
+            focusBodyTask = task
+            binding.richWeb.postDelayed(task, 350)
         }
-        focusBodyTask = task
-        binding.richWeb.postDelayed(task, 350)
     }
 
     /**
@@ -864,11 +865,14 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        /** 用户点到正文上：先把面板收掉，免得面板挡着他刚点开的光标。 */
+        /** 用户点到正文上：把标题框焦点清除（让标题光标消失），并收起面板。 */
         @JavascriptInterface
         fun onEditorTap() {
             runOnUiThread {
                 if (isFinishing || isDestroyed) return@runOnUiThread
+                if (binding.edTitle.hasFocus()) {
+                    binding.edTitle.clearFocus()
+                }
                 closePanels()
             }
         }
