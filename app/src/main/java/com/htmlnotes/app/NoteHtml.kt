@@ -88,7 +88,9 @@ object NoteHtml {
             "#ed th{background:${p.quoteBg};font-weight:600;}" +
             // ColorOS 16 官方 17px 待办复选框交互
             "#ed .task-item{list-style:none;margin:6px 0;display:flex;align-items:center;}" +
-            "#ed input[type='checkbox']{margin-right:10px;width:17px;height:17px;border-radius:4.5px;accent-color:${p.accent};cursor:pointer;vertical-align:-2px;}" +
+            "#ed input[type='checkbox']{margin-right:10px;width:18px;height:18px;border-radius:5px;accent-color:${p.accent};cursor:pointer;vertical-align:-2px;}" +
+            "#ed input[type='checkbox']:checked + *{text-decoration:line-through;opacity:0.5;}" +
+            "#ed input[type='checkbox']:checked ~ span{text-decoration:line-through;opacity:0.5;}" +
             // ColorOS 官方 4 色荧光马克笔高亮体系
             "#ed mark{background:#FFE22766;color:inherit;padding:1px 4px;border-radius:3px;}" +
             "#ed mark.hl-yellow{background:#FFE22766;}" +

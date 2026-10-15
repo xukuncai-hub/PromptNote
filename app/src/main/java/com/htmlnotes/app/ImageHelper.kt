@@ -21,8 +21,8 @@ object ImageHelper {
     fun processPickedImage(
         context: Context,
         uri: Uri,
-        maxDimension: Int = 1440,
-        quality: Int = 85
+        maxDimension: Int = 1080,
+        quality: Int = 75
     ): String? {
         val cr = context.contentResolver
         return runCatching {

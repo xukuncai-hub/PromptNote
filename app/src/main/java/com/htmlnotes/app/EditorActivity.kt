@@ -23,6 +23,7 @@ import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.view.inputmethod.InputMethodManager
 import android.webkit.JavascriptInterface
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.ArrayAdapter
@@ -219,13 +220,6 @@ class EditorActivity : AppCompatActivity() {
         var isImeAnimating = false
         var lastInsets: WindowInsetsCompat? = null
 
-        fun updateToolbarPosition(insets: WindowInsetsCompat) {
-            val sysBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
-            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
-            val imeOffset = maxOf(0, imeBottom - sysBottom)
-            dockingToolbar().translationY = -imeOffset.toFloat()
-        }
-
         fun syncDockMode(insets: WindowInsetsCompat) {
             val imeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
             if (imeVisible != lastImeVisible) {
@@ -234,13 +228,15 @@ class EditorActivity : AppCompatActivity() {
             }
         }
 
-        fun applySystemInsets(insets: WindowInsetsCompat) {
+        fun applyInsets(insets: WindowInsetsCompat) {
             val sys = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
             syncDockMode(insets)
             val l = sys.left
             val t = sys.top
             val r = sys.right
-            val b = sys.bottom
+            val b = maxOf(sys.bottom, ime.bottom)
+            dockingToolbar().translationY = 0f
             if (l == rootPad[0] && t == rootPad[1] && r == rootPad[2] && b == rootPad[3]) return
             rootPad[0] = l
             rootPad[1] = t
@@ -252,9 +248,8 @@ class EditorActivity : AppCompatActivity() {
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             lastInsets = insets
-            applySystemInsets(insets)
             if (!isImeAnimating) {
-                updateToolbarPosition(insets)
+                applyInsets(insets)
             }
             insets
         }
@@ -283,18 +278,14 @@ class EditorActivity : AppCompatActivity() {
                     runningAnimations: MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
                     lastInsets = insets
-                    syncDockMode(insets)
-                    updateToolbarPosition(insets)
+                    applyInsets(insets)
                     return insets
                 }
 
                 override fun onEnd(animation: WindowInsetsAnimationCompat) {
                     if ((animation.typeMask and WindowInsetsCompat.Type.ime()) != 0) {
                         isImeAnimating = false
-                        lastInsets?.let {
-                            syncDockMode(it)
-                            updateToolbarPosition(it)
-                        }
+                        lastInsets?.let { applyInsets(it) }
                     }
                 }
             }
@@ -597,6 +588,28 @@ class EditorActivity : AppCompatActivity() {
         }
         binding.richWeb.addJavascriptInterface(RichBridge(), "HtmlNotes")
         binding.richWeb.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                val uri = request?.url ?: return false
+                return handleUrl(uri)
+            }
+            @Deprecated("Deprecated in Java")
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                val uri = if (url != null) Uri.parse(url) else return false
+                return handleUrl(uri)
+            }
+            private fun handleUrl(uri: Uri): Boolean {
+                val scheme = uri.scheme?.lowercase()
+                if (scheme == "http" || scheme == "https" || scheme == "mailto" || scheme == "tel") {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
+                    } catch (e: Exception) {
+                        toast(R.string.toast_link)
+                    }
+                    return true
+                }
+                return false
+            }
+
             override fun onPageFinished(view: WebView?, url: String?) {
                 binding.richWeb.evaluateJavascript(
                     "var ed=document.getElementById('ed');" +
@@ -649,12 +662,32 @@ class EditorActivity : AppCompatActivity() {
                         // 正文自己滚、以及原生主动滚，都会让选区的视口坐标变化：
                         // 不订阅的话滚动之后原生拿到的还是旧坐标，浮条和锚定全都会错位。
                         "window.addEventListener('scroll',refreshState,true);" +
-                        // 点正文或空白处：聚焦并保证唤起键盘
+                        // 点击事件：精准区分复选框与正文聚焦（滑动不触发 click，彻底解决翻看误弹键盘）
                         "document.addEventListener('click',function(e){" +
-                        "if(document.activeElement!==ed&&(!ed.contains(e.target)||e.target===document.body)){ed.focus();}" +
+                        "var t=e.target;" +
+                        "if(t&&t.tagName==='INPUT'&&t.type==='checkbox'){" +
+                        "if(t.checked){t.setAttribute('checked','checked');}else{t.removeAttribute('checked');}" +
+                        "refreshState();HtmlNotes.onDirty();return;" +
+                        "}" +
+                        "if(document.activeElement!==ed&&(!ed.contains(t)||t===document.body)){ed.focus();}" +
                         "HtmlNotes.onEditorTap();" +
                         "});" +
-                        "document.addEventListener('touchend',function(e){HtmlNotes.onEditorTap();});" +
+                        // 稳健富文本内容注入器：选区存在则插入选区，选区丢失则智能追加末尾，永不丢图
+                        "window._insertHtml=function(html){" +
+                        "var ed=document.getElementById('ed');ed.focus();" +
+                        "var s=window.getSelection();var inserted=false;" +
+                        "if(s&&s.rangeCount>0){" +
+                        "var r=s.getRangeAt(0);" +
+                        "if(ed.contains(r.commonAncestorContainer)){inserted=document.execCommand('insertHTML',false,html);}" +
+                        "}" +
+                        "if(!inserted){" +
+                        "var div=document.createElement('div');div.innerHTML=html;" +
+                        "ed.appendChild(div);" +
+                        "var nr=document.createRange();nr.selectNodeContents(div);nr.collapse(false);" +
+                        "if(s){s.removeAllRanges();s.addRange(nr);}" +
+                        "}" +
+                        "refreshState();HtmlNotes.onDirty();" +
+                        "};" +
                         // 外接键盘快捷键。必须在页面里拦：Ctrl+X 之后的键事件早就被 IME/WebView 吃掉，
                         // 原生 onKeyDown 根本收不到。capture 挂在 document 上，赶在浏览器默认动作之前
                         // 抹掉它，否则 execCommand 会跟内置处理各翻一次加粗，等于没按。
@@ -738,6 +771,8 @@ class EditorActivity : AppCompatActivity() {
                         "var r=s.getRangeAt(0);var span=document.createElement('span');" +
                         "span.className='_ic';span.appendChild(r.extractContents());" +
                         "r.insertNode(span);HtmlNotes.relayoutCodes();}refreshState();"
+                "insertHTML" ->
+                    "if(window._insertHtml){window._insertHtml(${JSONObject.quote(value)});}else{document.execCommand('insertHTML',false,${JSONObject.quote(value)});}refreshState();"
                 else -> if (value == null) "document.execCommand('$cmd');refreshState();"
                 else "document.execCommand('$cmd', false, ${JSONObject.quote(value)});refreshState();"
             }

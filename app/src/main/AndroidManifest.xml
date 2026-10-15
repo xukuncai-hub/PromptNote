@@ -30,7 +30,7 @@
             android:name=".EditorActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:windowSoftInputMode="adjustNothing" />
+            android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".PreviewActivity"
