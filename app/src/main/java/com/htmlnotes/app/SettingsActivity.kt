@@ -31,7 +31,7 @@ class SettingsActivity : AppCompatActivity() {
         binding.scroll.applySystemBarInsets(left = true, right = true, bottom = true)
 
         binding.btnBack.setOnClickListener { finishWithAnim() }
-        binding.btnBack.attachPressScale(0.88f, 100L)
+        binding.btnBack.applyColorOsPressAnim(0.88f)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 finishWithAnim()
@@ -47,7 +47,7 @@ class SettingsActivity : AppCompatActivity() {
         listOf(
             binding.rowTheme, binding.rowThemeColor, binding.rowDefaultView,
             binding.rowClear, binding.rowEmail, binding.rowGithub
-        ).forEach { it.attachPressScale(0.98f, 80L) }
+        ).forEach { it.applyColorOsPressAnim(0.98f) }
 
         try {
             val info = packageManager.getPackageInfo(packageName, 0)
@@ -124,7 +124,7 @@ class SettingsActivity : AppCompatActivity() {
                 }
                 b.colorName.text = getString(ThemeHelper.colorNames[position])
                 b.checkMark.visibility = if (position == current) android.view.View.VISIBLE else android.view.View.GONE
-                b.root.attachPressScale(0.92f, 80L)
+                b.root.applyColorOsPressAnim(0.92f)
                 b.root.setOnClickListener {
                     sheet.dismiss()
                     prefs.edit().putInt("theme_color", position).apply()

@@ -316,10 +316,11 @@ class EditorActivity : AppCompatActivity() {
         setupSelectionBar()
         tip = EditorTip(binding.root) { tipBottomLimit() }
 
-        // 全部格式按钮附加按压缩放触感
+        // 全部格式按钮附加 ColorOS 触控物理微缩回弹
         listOf(
             binding.btnBack, binding.btnUndo, binding.btnRedo,
             binding.btnMore, binding.btnDone, binding.btnPreview,
+            binding.btnToggleAa, binding.btnPalette, binding.btnMoreTools,
             binding.btnTB, binding.btnTI, binding.btnTU, binding.btnTS,
             binding.segTitle, binding.segSubtitle, binding.segHeading, binding.segBody,
             binding.btnTodo, binding.btnUl, binding.btnOl, binding.btnQuote,
@@ -330,24 +331,53 @@ class EditorActivity : AppCompatActivity() {
             binding.btnCIndent, binding.btnCOutdent, binding.btnFormatCode, binding.btnClearCode,
             binding.btnSnLink, binding.btnSnImage, binding.btnSnUl,
             binding.btnSnHr, binding.btnSnTodo, binding.btnSnCheck, binding.btnCopyAll
-        ).forEach { it.attachPressScale(0.92f, 90L) }
+        ).forEach { it.applyColorOsPressAnim(0.92f) }
 
         binding.edTitle.doAfterTextChanged {
             markDirty()
             updateMeta()
         }
 
-        // ---- 文字模式格式工具栏（直观单层平铺，1-Tap 即达） ----
+        // ---- 文字模式：ColorOS 16 双层悬浮岛主栏交互 ----
+        binding.btnToggleAa.setOnClickListener { toggleAaPanel() }
+        binding.btnPalette.setOnClickListener { v ->
+            val popup = androidx.appcompat.widget.PopupMenu(this, v)
+            popup.menu.add(0, 1, 0, getString(R.string.rich_color))
+            popup.menu.add(0, 2, 1, getString(R.string.style_highlight))
+            popup.setOnMenuItemClickListener { item ->
+                when (item.itemId) {
+                    1 -> pickColor()
+                    2 -> pickHighlight()
+                }
+                true
+            }
+            popup.show()
+        }
+        binding.btnMoreTools.setOnClickListener { showMoreMenu() }
+
+        // ---- 文字模式格式工具栏（二级面板与行内样式） ----
         binding.btnTB.setOnClickListener { exec("bold", null) }
         binding.btnTI.setOnClickListener { exec("italic", null) }
         binding.btnTU.setOnClickListener { exec("underline", null) }
         binding.btnTS.setOnClickListener { exec("strikeThrough", null) }
         binding.btnTS.paintFlags = binding.btnTS.paintFlags or android.graphics.Paint.STRIKE_THRU_TEXT_FLAG
 
-        binding.segTitle.setOnClickListener { exec("formatBlock", "<h1>") }
-        binding.segSubtitle.setOnClickListener { exec("formatBlock", "<h2>") }
-        binding.segHeading.setOnClickListener { exec("formatBlock", "<h3>") }
-        binding.segBody.setOnClickListener { exec("formatBlock", "<p>") }
+        binding.segTitle.setOnClickListener {
+            updateSegments(binding.segTitle)
+            exec("formatBlock", "<h1>")
+        }
+        binding.segSubtitle.setOnClickListener {
+            updateSegments(binding.segSubtitle)
+            exec("formatBlock", "<h2>")
+        }
+        binding.segHeading.setOnClickListener {
+            updateSegments(binding.segHeading)
+            exec("formatBlock", "<h3>")
+        }
+        binding.segBody.setOnClickListener {
+            updateSegments(binding.segBody)
+            exec("formatBlock", "<p>")
+        }
 
         binding.btnTodo.setOnClickListener {
             exec("insertHTML", "<div><input type=\"checkbox\"> &nbsp;</div>")
@@ -454,7 +484,15 @@ class EditorActivity : AppCompatActivity() {
         binding.saveState.setTextColor(color)
         binding.saveState.animate().cancel()
         binding.saveState.removeCallbacks(hideSaveState)
-        binding.saveState.animate().alpha(1f).setDuration(160).start()
+        binding.saveState.scaleX = 0.92f
+        binding.saveState.scaleY = 0.92f
+        binding.saveState.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(190)
+            .setInterpolator(CouiMotion.EASE_INTERPOLATOR)
+            .start()
         if (!sticky) {
             binding.saveState.postDelayed(hideSaveState, 2400)
         }
@@ -462,7 +500,13 @@ class EditorActivity : AppCompatActivity() {
 
     private val hideSaveState = Runnable {
         if (isFinishing || isDestroyed) return@Runnable
-        binding.saveState.animate().alpha(0f).setDuration(420).start()
+        binding.saveState.animate()
+            .alpha(0f)
+            .scaleX(0.92f)
+            .scaleY(0.92f)
+            .setDuration(280)
+            .setInterpolator(CouiMotion.IN_EASE_INTERPOLATOR)
+            .start()
     }
 
     private val onSurfaceVariantColor: Int by lazy {
@@ -541,6 +585,13 @@ class EditorActivity : AppCompatActivity() {
                         "new MutationObserver(function(){_dirty=true;})" +
                         ".observe(ed,{childList:true,subtree:true,characterData:true,attributes:true});" +
                         "function refreshState(){" +
+                        "var _anchor=window.getSelection()?window.getSelection().anchorNode:null;" +
+                        "var _isTodo=false;" +
+                        "var _p=_anchor?(_anchor.nodeType===1?_anchor:_anchor.parentElement):null;" +
+                        "while(_p&&_p!==ed){" +
+                        "if(_p.querySelector&&_p.querySelector('input[type=checkbox]')){_isTodo=true;break;}" +
+                        "_p=_p.parentElement;" +
+                        "}" +
                         "var st=JSON.stringify({" +
                         "b:document.queryCommandState('bold')," +
                         "i:document.queryCommandState('italic')," +
@@ -550,7 +601,8 @@ class EditorActivity : AppCompatActivity() {
                         "ol:document.queryCommandState('insertOrderedList')," +
                         "jc:document.queryCommandState('justifyCenter')," +
                         "jr:document.queryCommandState('justifyRight')," +
-                        "jf:document.queryCommandState('justifyFull')});" +
+                        "jf:document.queryCommandState('justifyFull')," +
+                        "todo:_isTodo});" +
                         "HtmlNotes.onState(document.queryCommandEnabled('undo')," +
                         "document.queryCommandEnabled('redo')," +
                         "document.queryCommandValue('formatBlock')," +
@@ -1180,9 +1232,40 @@ class EditorActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateSegments(active: View) {
+        listOf(binding.segBody, binding.segTitle, binding.segSubtitle, binding.segHeading).forEach {
+            it.isSelected = (it == active)
+        }
+    }
+
+    private fun toggleAaPanel() {
+        val willShow = binding.panelTextBlock.visibility != View.VISIBLE
+        android.transition.TransitionManager.beginDelayedTransition(
+            binding.toolbarText,
+            android.transition.AutoTransition().apply {
+                interpolator = CouiMotion.EASE_INTERPOLATOR
+                duration = 240
+            }
+        )
+        binding.panelTextBlock.visibility = if (willShow) View.VISIBLE else View.GONE
+        binding.btnToggleAa.isSelected = willShow
+    }
+
     private fun visiblePanelHeight(): Int = 0
 
-    private fun closePanels() {}
+    private fun closePanels() {
+        if (binding.panelTextBlock.visibility == View.VISIBLE) {
+            android.transition.TransitionManager.beginDelayedTransition(
+                binding.toolbarText,
+                android.transition.AutoTransition().apply {
+                    interpolator = CouiMotion.EASE_INTERPOLATOR
+                    duration = 200
+                }
+            )
+            binding.panelTextBlock.visibility = View.GONE
+            binding.btnToggleAa.isSelected = false
+        }
+    }
 
     /** 光标处真实格式 → 底部工具栏与二级面板选中态实时同步。 */
     private fun syncRichToolbar(block: String?, statesJson: String?) {
@@ -1204,24 +1287,16 @@ class EditorActivity : AppCompatActivity() {
         binding.btnAlignL.isSelected = !center && !right && !justify
         binding.btnAlignC.isSelected = center
         binding.btnAlignR.isSelected = right
-        // 二级：段落层级
-        val segIndex = when (normalized) {
-            "h1" -> 0
-            "h2" -> 1
-            "h3" -> 2
-            "p", "div" -> 3
-            else -> -1
-        }
-        val segments = listOf(
-            binding.segTitle, binding.segSubtitle, binding.segHeading, binding.segBody
-        )
-        segments.forEachIndexed { i, tv ->
-            tv.isSelected = i == segIndex
-        }
-        // 二级：列表/引用
+        // 二级：ColorOS 分段标题 [ 正文 | 大标题 | 中标题 | 小标题 ]
+        binding.segBody.isSelected = normalized in listOf("p", "div", "") || (normalized !in listOf("h1", "h2", "h3", "blockquote"))
+        binding.segTitle.isSelected = normalized == "h1"
+        binding.segSubtitle.isSelected = normalized == "h2"
+        binding.segHeading.isSelected = normalized == "h3"
+        // 二级：列表/引用/待办
         binding.btnUl.isSelected = st.optBoolean("ul")
         binding.btnOl.isSelected = st.optBoolean("ol")
         binding.btnQuote.isSelected = normalized == "blockquote"
+        binding.btnTodo.isSelected = st.optBoolean("todo")
     }
 
     private fun setUndoRedo(v: View, enabled: Boolean) {

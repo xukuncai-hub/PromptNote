@@ -98,9 +98,9 @@ class ProjectAdapter(
         // 每张卡片的编辑按钮都叫「编辑便签」的话无法区分，带上标题
         b.btnEdit.contentDescription = context.getString(R.string.edit_note_named, b.title.text)
 
-        // 微动画：卡片与编辑按钮触摸反馈
-        b.root.attachPressScale(0.97f, 90L)
-        b.btnEdit.attachPressScale(0.85f, 90L)
+        // ColorOS 官方触控物理动效：卡片与编辑按钮按压回弹与微触感
+        b.root.applyColorOsPressAnim(0.96f)
+        b.btnEdit.applyColorOsPressAnim(0.88f)
 
         // 过渡动画源视图统一用整张卡片：编辑按钮太小，从它展开视觉上不连贯
         b.root.setOnClickListener { onAction(p, Action.OPEN, b.root) }

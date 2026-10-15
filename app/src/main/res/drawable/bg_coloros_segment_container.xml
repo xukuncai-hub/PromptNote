@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ColorOS 分段选择器容器底色：圆角胶囊浅灰底 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="?attr/colorSurfaceContainerLow" />
+    <corners android:radius="14dp" />
+    <stroke
+        android:width="0.5dp"
+        android:color="?attr/colorOutlineVariant" />
+</shape>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 工具栏图标颜色：选中=主题色上图标（白），常态=正文色 -->
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:state_selected="true" android:color="?attr/colorOnPrimary" />
+    <item android:state_selected="true" android:color="?attr/colorPrimary" />
+    <item android:state_activated="true" android:color="?attr/colorPrimary" />
     <item android:color="?attr/colorOnSurface" />
 </selector>

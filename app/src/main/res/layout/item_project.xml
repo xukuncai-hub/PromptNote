@@ -8,11 +8,11 @@
     android:clickable="true"
     android:focusable="true"
     app:cardBackgroundColor="?attr/colorSurfaceContainerHigh"
-    app:cardCornerRadius="18dp"
+    app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
     app:rippleColor="@color/card_ripple"
     app:strokeColor="?attr/colorOutlineVariant"
-    app:strokeWidth="1dp">
+    app:strokeWidth="0.6dp">
 
     <LinearLayout
         android:layout_width="match_parent"

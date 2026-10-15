@@ -227,7 +227,7 @@ class PreviewActivity : AppCompatActivity() {
         }
 
         binding.btnRetry.setOnClickListener { retryLoad() }
-        binding.btnRetry.attachPressScale(0.92f, 100L)
+        binding.btnRetry.applyColorOsPressAnim(0.92f)
     }
 
     /**

@@ -183,7 +183,7 @@
             android:typeface="monospace"
             android:visibility="gone" />
 
-        <!-- ════════ 文字模式：单层平铺横向格式栏（微信/Apple Notes 风格，直观高效零多余点击） ════════ -->
+        <!-- ════════ 文字模式：ColorOS 16 官方风格两级悬浮操作岛 ════════ -->
         <LinearLayout
             android:id="@+id/toolbarText"
             android:layout_width="match_parent"
@@ -191,260 +191,394 @@
             android:layout_marginHorizontal="12dp"
             android:layout_marginBottom="8dp"
             android:background="@drawable/bg_toolbar_dock"
-            android:elevation="6dp"
-            android:orientation="horizontal"
-            android:paddingHorizontal="4dp"
+            android:elevation="4dp"
+            android:orientation="vertical"
+            android:paddingHorizontal="6dp"
             android:paddingVertical="4dp">
 
-            <HorizontalScrollView
+            <!-- 1. ColorOS 文本排版副面板 (点击 Aa 展开/收起) -->
+            <LinearLayout
+                android:id="@+id/panelTextBlock"
                 android:layout_width="match_parent"
-                android:layout_height="42dp"
-                android:fillViewport="true"
-                android:scrollbars="none">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp"
+                android:visibility="gone"
+                tools:visibility="visible">
 
+                <!-- 1.1 ColorOS 经典分段选择器 [ 正文 | 大标题 | 中标题 | 小标题 ] -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
+                    android:id="@+id/layoutSegment"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:layout_marginHorizontal="4dp"
+                    android:background="@drawable/bg_coloros_segment_container"
                     android:orientation="horizontal"
-                    android:paddingHorizontal="4dp">
+                    android:padding="2dp">
 
-                    <!-- 1. 基础字符格式 B / I / U / S -->
                     <TextView
-                        android:id="@+id/btnTB"
-                        style="@style/Widget.HtmlNotes.Tool.Square"
-                        android:contentDescription="@string/rich_bold"
-                        android:text="B"
-                        android:textSize="16sp"
+                        android:id="@+id/segBody"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_coloros_segment_item"
+                        android:gravity="center"
+                        android:text="@string/seg_body"
+                        android:textColor="@color/color_segment_text"
+                        android:textSize="12.5sp"
                         android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/btnTI"
-                        style="@style/Widget.HtmlNotes.Tool.Square"
-                        android:contentDescription="@string/rich_italic"
-                        android:text="I"
-                        android:textSize="16sp"
-                        android:textStyle="italic" />
-
-                    <TextView
-                        android:id="@+id/btnTU"
-                        style="@style/Widget.HtmlNotes.Tool.Square"
-                        android:contentDescription="@string/rich_underline"
-                        android:text="U"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/btnTS"
-                        style="@style/Widget.HtmlNotes.Tool.Square"
-                        android:contentDescription="@string/style_strike"
-                        android:text="S"
-                        android:textSize="16sp" />
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="20dp"
-                        android:layout_marginHorizontal="6dp"
-                        android:background="?attr/colorOutlineVariant" />
-
-                    <!-- 2. 标题层级 H1 / H2 / H3 / 正文 -->
                     <TextView
                         android:id="@+id/segTitle"
-                        style="@style/Widget.HtmlNotes.Tool.Chip"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/rich_h1"
-                        android:text="H1"
-                        android:textSize="14sp"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_coloros_segment_item"
+                        android:gravity="center"
+                        android:text="@string/rich_h1"
+                        android:textColor="@color/color_segment_text"
+                        android:textSize="12.5sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/segSubtitle"
-                        style="@style/Widget.HtmlNotes.Tool.Chip"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/rich_h2"
-                        android:text="H2"
-                        android:textSize="14sp"
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_coloros_segment_item"
+                        android:gravity="center"
+                        android:text="@string/rich_h2"
+                        android:textColor="@color/color_segment_text"
+                        android:textSize="12.5sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/segHeading"
-                        style="@style/Widget.HtmlNotes.Tool.Chip"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/rich_h3"
-                        android:text="H3"
-                        android:textSize="14sp" />
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_coloros_segment_item"
+                        android:gravity="center"
+                        android:text="@string/rich_h3"
+                        android:textColor="@color/color_segment_text"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/segBody"
-                        style="@style/Widget.HtmlNotes.Tool.Chip"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/seg_body"
-                        android:text="正文"
-                        android:textSize="13sp" />
+                <!-- 1.2 行内格式与排版快捷横滑条 -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:layout_marginTop="6dp"
+                    android:fillViewport="true"
+                    android:scrollbars="none">
 
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="20dp"
-                        android:layout_marginHorizontal="6dp"
-                        android:background="?attr/colorOutlineVariant" />
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="4dp">
 
-                    <!-- 3. 列表与清单 待办 / 无序列表 / 有序列表 / 引用 -->
+                        <TextView
+                            android:id="@+id/btnTB"
+                            style="@style/Widget.HtmlNotes.Tool.Square"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/rich_bold"
+                            android:text="B"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnTI"
+                            style="@style/Widget.HtmlNotes.Tool.Square"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/rich_italic"
+                            android:text="I"
+                            android:textSize="16sp"
+                            android:textStyle="italic" />
+
+                        <TextView
+                            android:id="@+id/btnTU"
+                            style="@style/Widget.HtmlNotes.Tool.Square"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/rich_underline"
+                            android:text="U"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnTS"
+                            style="@style/Widget.HtmlNotes.Tool.Square"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/style_strike"
+                            android:text="S"
+                            android:textSize="16sp" />
+
+                        <View
+                            android:layout_width="0.6dp"
+                            android:layout_height="18dp"
+                            android:layout_marginHorizontal="6dp"
+                            android:background="?attr/colorOutlineVariant" />
+
+                        <ImageButton
+                            android:id="@+id/btnAlignL"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/rich_align_left"
+                            android:src="@drawable/ic_align_left" />
+
+                        <ImageButton
+                            android:id="@+id/btnAlignC"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/rich_align_center"
+                            android:src="@drawable/ic_align_center" />
+
+                        <ImageButton
+                            android:id="@+id/btnAlignR"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/rich_align_right"
+                            android:src="@drawable/ic_align_right" />
+
+                        <View
+                            android:layout_width="0.6dp"
+                            android:layout_height="18dp"
+                            android:layout_marginHorizontal="6dp"
+                            android:background="?attr/colorOutlineVariant" />
+
+                        <ImageButton
+                            android:id="@+id/btnOutdent"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/para_outdent"
+                            android:src="@drawable/ic_outdent" />
+
+                        <ImageButton
+                            android:id="@+id/btnIndent"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/para_indent"
+                            android:src="@drawable/ic_indent" />
+
+                        <ImageButton
+                            android:id="@+id/btnQuote"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/para_quote"
+                            android:src="@drawable/ic_quote" />
+
+                        <ImageButton
+                            android:id="@+id/btnHr"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/insert_hr"
+                            android:src="@drawable/ic_hr" />
+
+                        <TextView
+                            android:id="@+id/btnColor"
+                            style="@style/Widget.HtmlNotes.Tool.Chip"
+                            android:layout_marginEnd="4dp"
+                            android:background="@drawable/bg_a_color"
+                            android:contentDescription="@string/rich_color"
+                            android:text="A"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnHl"
+                            style="@style/Widget.HtmlNotes.Tool.Chip"
+                            android:layout_marginEnd="4dp"
+                            android:background="@drawable/bg_tool_hl"
+                            android:contentDescription="@string/style_highlight"
+                            android:text="A"
+                            android:textColor="@color/hl_text"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/btnSize"
+                            style="@style/Widget.HtmlNotes.Tool.Chip"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="@string/font_size"
+                            android:text="字号"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/btnFont"
+                            style="@style/Widget.HtmlNotes.Tool.Chip"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="@string/font_system"
+                            android:text="字体"
+                            android:textSize="12sp" />
+
+                        <ImageButton
+                            android:id="@+id/btnLink"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="@string/insert_link"
+                            android:src="@drawable/ic_link" />
+
+                        <ImageButton
+                            android:id="@+id/btnCode"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="@string/para_code"
+                            android:src="@drawable/ic_code" />
+
+                        <ImageButton
+                            android:id="@+id/btnOl"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:layout_marginEnd="4dp"
+                            android:contentDescription="@string/rich_ol"
+                            android:src="@drawable/ic_list_ol" />
+
+                        <ImageButton
+                            android:id="@+id/btnClear"
+                            style="@style/Widget.HtmlNotes.Tool.Icon36"
+                            android:background="@drawable/bg_coloros_tool_button"
+                            android:contentDescription="@string/rich_clear"
+                            android:src="@drawable/ic_close" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+
+                <!-- 分割线 -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="0.6dp"
+                    android:layout_marginTop="4dp"
+                    android:background="?attr/colorOutlineVariant" />
+            </LinearLayout>
+
+            <!-- 2. ColorOS 经典常驻主工具栏 (5大核心操作等距排布) -->
+            <LinearLayout
+                android:id="@+id/barMainTools"
+                android:layout_width="match_parent"
+                android:layout_height="46dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <!-- 2.1 Aa 格式面板展开/收起切换开关 -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
+
+                    <ImageButton
+                        android:id="@+id/btnToggleAa"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_coloros_tool_button"
+                        android:contentDescription="排版与样式"
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_coloros_richtext"
+                        app:tint="@color/tool_btn_tint" />
+                </FrameLayout>
+
+                <!-- 2.2 待办任务清单 -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
+
                     <ImageButton
                         android:id="@+id/btnTodo"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_coloros_tool_button"
                         android:contentDescription="@string/todo_menu"
-                        android:src="@drawable/ic_checklist" />
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_coloros_todo"
+                        app:tint="@color/tool_btn_tint" />
+                </FrameLayout>
 
-                    <ImageButton
-                        android:id="@+id/btnUl"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/rich_ul"
-                        android:src="@drawable/ic_list_ul" />
-
-                    <ImageButton
-                        android:id="@+id/btnOl"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/rich_ol"
-                        android:src="@drawable/ic_list_ol" />
-
-                    <ImageButton
-                        android:id="@+id/btnQuote"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/para_quote"
-                        android:src="@drawable/ic_quote" />
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="20dp"
-                        android:layout_marginHorizontal="6dp"
-                        android:background="?attr/colorOutlineVariant" />
-
-                    <!-- 4. 对齐方式 左 / 中 / 右 -->
-                    <ImageButton
-                        android:id="@+id/btnAlignL"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/rich_align_left"
-                        android:src="@drawable/ic_align_left" />
-
-                    <ImageButton
-                        android:id="@+id/btnAlignC"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/rich_align_center"
-                        android:src="@drawable/ic_align_center" />
-
-                    <ImageButton
-                        android:id="@+id/btnAlignR"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/rich_align_right"
-                        android:src="@drawable/ic_align_right" />
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="20dp"
-                        android:layout_marginHorizontal="6dp"
-                        android:background="?attr/colorOutlineVariant" />
-
-                    <!-- 5. 颜色 / 高亮 / 字号 / 字体 -->
-                    <TextView
-                        android:id="@+id/btnColor"
-                        style="@style/Widget.HtmlNotes.Tool.Chip"
-                        android:layout_marginEnd="4dp"
-                        android:background="@drawable/bg_a_color"
-                        android:contentDescription="@string/rich_color"
-                        android:text="A"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/btnHl"
-                        style="@style/Widget.HtmlNotes.Tool.Chip"
-                        android:layout_marginEnd="4dp"
-                        android:background="@drawable/bg_tool_hl"
-                        android:contentDescription="@string/style_highlight"
-                        android:text="A"
-                        android:textColor="@color/hl_text"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/btnSize"
-                        style="@style/Widget.HtmlNotes.Tool.Chip"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/font_size"
-                        android:text="字号"
-                        android:textSize="13sp" />
-
-                    <TextView
-                        android:id="@+id/btnFont"
-                        style="@style/Widget.HtmlNotes.Tool.Chip"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/font_system"
-                        android:text="字体"
-                        android:textSize="13sp" />
-
-                    <View
-                        android:layout_width="1dp"
-                        android:layout_height="20dp"
-                        android:layout_marginHorizontal="6dp"
-                        android:background="?attr/colorOutlineVariant" />
-
-                    <!-- 6. 高级插入与格式 (链接 / 图片 / 代码 / 缩进 / 清除) -->
-                    <ImageButton
-                        android:id="@+id/btnLink"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/insert_link"
-                        android:src="@drawable/ic_link" />
+                <!-- 2.3 插入图片 -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
 
                     <ImageButton
                         android:id="@+id/btnImage"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_coloros_tool_button"
                         android:contentDescription="@string/insert_image"
-                        android:src="@drawable/ic_image" />
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_coloros_image"
+                        app:tint="@color/tool_btn_tint" />
+                </FrameLayout>
+
+                <!-- 2.4 调色板 / 荧光高亮笔 -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
 
                     <ImageButton
-                        android:id="@+id/btnCode"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/para_code"
-                        android:src="@drawable/ic_code" />
+                        android:id="@+id/btnPalette"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_coloros_tool_button"
+                        android:contentDescription="色彩与高亮"
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_coloros_palette"
+                        app:tint="@color/tool_btn_tint" />
+                </FrameLayout>
+
+                <!-- 2.5 列表 (无序/有序) -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
 
                     <ImageButton
-                        android:id="@+id/btnHr"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/insert_hr"
-                        android:src="@drawable/ic_hr" />
+                        android:id="@+id/btnUl"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_coloros_tool_button"
+                        android:contentDescription="@string/rich_ul"
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_coloros_list"
+                        app:tint="@color/tool_btn_tint" />
+                </FrameLayout>
+
+                <!-- 2.6 更多操作抽屉 -->
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1">
 
                     <ImageButton
-                        android:id="@+id/btnOutdent"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/para_outdent"
-                        android:src="@drawable/ic_outdent" />
-
-                    <ImageButton
-                        android:id="@+id/btnIndent"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:layout_marginEnd="4dp"
-                        android:contentDescription="@string/para_indent"
-                        android:src="@drawable/ic_indent" />
-
-                    <ImageButton
-                        android:id="@+id/btnClear"
-                        style="@style/Widget.HtmlNotes.Tool.Icon36"
-                        android:contentDescription="@string/rich_clear"
-                        android:src="@drawable/ic_close" />
-                </LinearLayout>
-            </HorizontalScrollView>
+                        android:id="@+id/btnMoreTools"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/bg_coloros_tool_button"
+                        android:contentDescription="@string/more_menu"
+                        android:padding="9dp"
+                        android:scaleType="fitCenter"
+                        android:src="@drawable/ic_more"
+                        app:tint="@color/tool_btn_tint" />
+                </FrameLayout>
+            </LinearLayout>
         </LinearLayout>
 
         <!-- ════════ 代码模式：单层平铺代码工具栏 ════════ -->

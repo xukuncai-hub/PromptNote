@@ -57,46 +57,50 @@ object NoteHtml {
         return "rgba(${(v shr 16) and 0xFF},${(v shr 8) and 0xFF},${v and 0xFF},$alpha)"
     }
 
-    /** 正文区共享 CSS（#ed 容器）。工具栏在下方布局流中不再覆盖正文，底部仅留少量呼吸空间。 */
+    /** 正文区共享 CSS（#ed 容器）。对齐 ColorOS 16 官方 TipTap 排版体系与色彩标准。 */
     private fun contentCss(p: Palette): String =
-        "#ed{outline:none;min-height:100%;padding:16px 20px 24px 20px;" +
-            "font-family:-apple-system,'Segoe UI',Roboto,sans-serif;font-size:16px;line-height:1.75;" +
+        "#ed{outline:none;min-height:100%;padding:16px 20px 28px 20px;" +
+            "font-family:-apple-system,'Segoe UI',Roboto,'OPPO Sans 4.0 SC',sans-serif;font-size:16px;line-height:1.72;" +
             "caret-color:${p.accent};word-break:break-word;" +
             // 去掉 WebView 点按时的灰蓝闪烁
             "-webkit-tap-highlight-color:transparent;}" +
-            // 选区底色跟随主题色，否则用的是浏览器默认蓝，跟 App 的主题色是两套色
+            // 选区底色跟随主题色，采用微透明度
             "::selection{background:${p.selection};}" +
-            // 标题走衬线（编辑风的 display 字），正文保持无衬线以保证长文可读性；
-            // 字号严格落在 16/20/24 阶梯上，与原生 UI 的字阶同源
-            "#ed h1,#ed h2,#ed h3{font-family:serif,-apple-system,'Segoe UI',Roboto,sans-serif;}" +
-            "#ed h1{font-size:24px;margin:.6em 0 .4em;line-height:1.3;font-weight:700;letter-spacing:-0.01em;}" +
-            "#ed h2{font-size:20px;margin:.6em 0 .4em;line-height:1.3;font-weight:700;letter-spacing:-0.01em;}" +
-            "#ed h3{font-size:16px;margin:.7em 0 .4em;line-height:1.4;font-weight:600;}" +
-            "#ed p{margin:.3em 0;}" +
-            "#ed blockquote{margin:.6em 0;padding:.6em 1em;border-left:4px solid ${p.accent};" +
-            "color:${p.sub};background:${p.quoteBg};border-radius:6px;}" +
-            "#ed ul,#ed ol{padding-left:1.5em;margin:.4em 0;}" +
+            // ColorOS 标题与排版字阶 (24 / 20 / 16)
+            "#ed h1,#ed h2,#ed h3{font-family:-apple-system,'Segoe UI',Roboto,'OPPO Sans 4.0 SC',sans-serif;}" +
+            "#ed h1{font-size:24px;margin:22px 0 12px;line-height:1.35;font-weight:700;letter-spacing:-0.01em;}" +
+            "#ed h2{font-size:20px;margin:18px 0 10px;line-height:1.4;font-weight:600;letter-spacing:-0.01em;}" +
+            "#ed h3{font-size:16px;margin:14px 0 8px;line-height:1.45;font-weight:600;}" +
+            "#ed p{margin:8px 0;}" +
+            // ColorOS 标志性圆角引用块
+            "#ed blockquote{margin:12px 0;padding:10px 14px;border-left:3.5px solid ${p.accent};" +
+            "color:${p.sub};background:${p.quoteBg};border-radius:8px;font-style:normal;}" +
+            "#ed ul,#ed ol{padding-left:1.5em;margin:8px 0;}" +
             "#ed a{color:${p.accent};text-decoration:underline;text-underline-offset:2px;}" +
             "#ed code{background:${p.quoteBg};padding:2px 6px;border-radius:4px;" +
             "font-family:Menlo,Consolas,monospace;font-size:0.9em;color:${p.accent};}" +
-            "#ed hr{border:none;border-top:1px solid ${p.sub};margin:1.2em 0;opacity:0.4;}" +
-            "#ed img{max-width:100%;height:auto;border-radius:8px;margin:.5em 0;box-shadow:0 2px 8px rgba(0,0,0,0.08);}" +
+            "#ed hr{border:none;border-top:0.66px solid ${p.sub};margin:16px 0;opacity:0.35;}" +
+            "#ed img{max-width:100%;height:auto;border-radius:8px;margin:8px 0;box-shadow:0 2px 8px rgba(0,0,0,0.08);}" +
             "#ed pre{white-space:pre-wrap;word-break:break-word;margin:0;}" +
-            // 表格排版适配
-            "#ed table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:14px;}" +
-            "#ed th,#ed td{border:1px solid ${p.sub};padding:6px 10px;text-align:left;}" +
+            // ColorOS 风格表格 (0.66px 细边框 + 圆角)
+            "#ed table{width:100%;border-collapse:separate;border-spacing:0;margin:12px 0;font-size:14px;border:0.66px solid rgba(0,0,0,0.12);border-radius:6px;overflow:hidden;}" +
+            "#ed th,#ed td{border:0.66px solid rgba(0,0,0,0.1);padding:8px 12px;text-align:left;}" +
             "#ed th{background:${p.quoteBg};font-weight:600;}" +
-            // 待办清单项 CSS (交互复选框/待办项)
-            "#ed .task-item{list-style:none;margin:.3em 0;display:flex;align-items:center;}" +
-            "#ed input[type='checkbox']{margin-right:8px;width:16px;height:16px;accent-color:${p.accent};cursor:pointer;}" +
-            // HTML5 拓展标签兼容 (mark, kbd, details, summary, video, iframe, sub, sup)
-            "#ed mark{background:${rgba("#FFEB3B", 0.45f)};color:inherit;padding:1px 4px;border-radius:3px;}" +
+            // ColorOS 16 官方 17px 待办复选框交互
+            "#ed .task-item{list-style:none;margin:6px 0;display:flex;align-items:center;}" +
+            "#ed input[type='checkbox']{margin-right:10px;width:17px;height:17px;border-radius:4.5px;accent-color:${p.accent};cursor:pointer;vertical-align:-2px;}" +
+            // ColorOS 官方 4 色荧光马克笔高亮体系
+            "#ed mark{background:#FFE22766;color:inherit;padding:1px 4px;border-radius:3px;}" +
+            "#ed mark.hl-yellow{background:#FFE22766;}" +
+            "#ed mark.hl-red{background:#FFC1C766;}" +
+            "#ed mark.hl-blue{background:#BBE7FF66;}" +
+            "#ed mark.hl-green{background:#B6EDBF66;}" +
             "#ed kbd{background:${p.quoteBg};border:1px solid ${p.sub};border-radius:4px;padding:2px 5px;font-family:monospace;font-size:0.85em;}" +
-            "#ed details{background:${p.quoteBg};border-radius:8px;padding:8px 12px;margin:.6em 0;}" +
+            "#ed details{background:${p.quoteBg};border-radius:8px;padding:8px 12px;margin:8px 0;}" +
             "#ed summary{font-weight:600;cursor:pointer;outline:none;padding:2px 0;}" +
             "#ed sub,#ed sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline;}" +
             "#ed sup{top:-0.5em;} #ed sub{bottom:-0.25em;}" +
-            "#ed video,#ed iframe{max-width:100%;border-radius:8px;border:none;margin:.6em 0;}"
+            "#ed video,#ed iframe{max-width:100%;border-radius:8px;border:none;margin:8px 0;}"
 
     private fun head(p: Palette, extra: String = ""): String =
         "<!DOCTYPE html><html><head><meta charset=\"UTF-8\">" +

@@ -125,8 +125,11 @@ class MainActivity : AppCompatActivity() {
 
         binding.fabNew.setOnClickListener { showTypeChooser() }
         binding.btnEmptyCreate.setOnClickListener { showTypeChooser() }
-        binding.fabNew.attachPressScale(0.92f, 100L)
-        binding.btnEmptyCreate.attachPressScale(0.95f, 100L)
+        binding.fabNew.applyColorOsPressAnim(0.92f)
+        binding.btnEmptyCreate.applyColorOsPressAnim(0.94f)
+        listOf(binding.chipAll, binding.chipText, binding.chipHtml, binding.chipPinned).forEach {
+            it.applyColorOsPressAnim(0.95f)
+        }
         binding.searchEdit.doAfterTextChanged {
             searchHandler.removeCallbacks(searchTask)
             searchHandler.postDelayed(searchTask, SEARCH_DEBOUNCE_MS)
@@ -152,7 +155,7 @@ class MainActivity : AppCompatActivity() {
             applyFilter()
         }
 
-        // 新建按钮弹出动画（弹性放大）
+        // 新建按钮弹出动画（ColorOS 弹性物理放大）
         binding.fabNew.post {
             binding.fabNew.scaleX = 0.5f
             binding.fabNew.scaleY = 0.5f
@@ -160,7 +163,7 @@ class MainActivity : AppCompatActivity() {
             binding.fabNew.animate()
                 .scaleX(1f).scaleY(1f).alpha(1f)
                 .setDuration(320)
-                .setInterpolator(android.view.animation.OvershootInterpolator(1.6f))
+                .setInterpolator(CouiMotion.SPRING_BOUNCE_INTERPOLATOR)
                 .start()
         }
 
@@ -300,7 +303,8 @@ class MainActivity : AppCompatActivity() {
             .alpha(if (hidden) 0f else 1f)
             .scaleX(if (hidden) 0.6f else 1f)
             .scaleY(if (hidden) 0.6f else 1f)
-            .setDuration(180)
+            .setDuration(190)
+            .setInterpolator(CouiMotion.EASE_INTERPOLATOR)
             .start()
     }
 
@@ -400,7 +404,7 @@ class MainActivity : AppCompatActivity() {
         listOf(
             menuBinding.actionPin, menuBinding.actionEdit, menuBinding.actionShare,
             menuBinding.actionCopy, menuBinding.actionDelete
-        ).forEach { it.attachPressScale(0.97f, 70L) }
+        ).forEach { it.applyColorOsPressAnim(0.97f) }
 
         sheet.show()
     }
